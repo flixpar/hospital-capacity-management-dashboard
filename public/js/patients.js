@@ -632,6 +632,26 @@ function setDefaultDates() {
 }
 setDefaultDates();
 
+function setDefaultTransferBudget() {
+	const hospital_extensions = ["bmc", "hcgh", "jhh", "sh", "smh"];
+	const bedtype = document.getElementById("form-patient-type").value;
+
+	let defaultvalue = 10;
+	if (bedtype == "all") {
+		defaultvalue = 40;
+	} else if (bedtype == "icu") {
+		defaultvalue = 15;
+	} else if (bedtype == "ward") {
+		defaultvalue = 25;
+	}
+
+	hospital_extensions.forEach(h => {
+		document.getElementById(`form-transferbudget-${h}`).value = defaultvalue;
+	});
+}
+setDefaultTransferBudget();
+document.getElementById("form-patient-type").addEventListener("change", setDefaultTransferBudget);
+
 function validateForm() {
 	const data_start_date = "2020-03-25";
 	const data_end_date   = "2021-06-30";
