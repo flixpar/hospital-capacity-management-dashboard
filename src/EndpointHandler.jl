@@ -84,6 +84,7 @@ function handle_patients_request(
 			active_smoothness_penalty=0.01,
 			admitted_smoothness_penalty=0.25,
 			capacity_cushion=(1.0-capacity_util),
+			transfer_budget=transfer_budget,
 			constrain_integer=constrain_integer,
 			verbose=false,
 		)

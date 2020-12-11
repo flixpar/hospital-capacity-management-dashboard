@@ -168,6 +168,7 @@ function patient_loadbalance(
 		active_smoothness_penalty::Real=0, admitted_smoothness_penalty::Real=0,
 		constrain_integer::Bool=false,
 		capacity_weights::Array{<:Real,1}=Int[],
+		transfer_budget::Array{<:Real,1}=Int[],
 
 		sendreceive_gap::Int=0, min_send_amt::Real=0,
 		setup_cost::Real=0,
@@ -261,6 +262,7 @@ function patient_loadbalance(
 	enforce_no_worse_overflow!(model, no_worse_overflow, active_patients, active_null, capacity)
 	enforce_minsendamt!(model, sent, min_send_amt)
 	enforce_sendreceivegap!(model, sent, sendreceive_gap)
+	enforce_transferbudget!(model, sent, transfer_budget)
 
 	add_sent_penalty!(model, sent, objective, sent_penalty)
 	add_smoothness_penalty!(model, sent, objective, smoothness_penalty)
