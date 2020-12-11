@@ -693,7 +693,7 @@ function sendUpdateQuery() {
 		integer: $("#form-integer")[0].value,
 		transferbudget: transferBudget,
 		surgepreferences: surgepreferences,
-		utilization: $("#form-utilization")[0].value,
+		utilization: ($("#form-utilization")[0].value / 100).toString(),
 		uncertaintylevel: $("#form-uncertainty")[0].value,
 		los: $("#form-los")[0].value,
 		start_date: $("#form-start-date")[0].value,
