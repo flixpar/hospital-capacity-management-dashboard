@@ -397,7 +397,7 @@ function setupDownloads(rawdata) {
 	downloadTableButton.type = "button";
 	downloadTableButton.addEventListener("click", _ => {
 		console.log("download table");
-		downloadTableAsCSV(rawdata.full_results, "patient_alloc_table.json");
+		downloadTableAsCSV(rawdata.full_results, "patient_alloc_table.csv");
 	});
 	downloadContainer.appendChild(downloadTableButton);
 
@@ -408,7 +408,7 @@ function setupDownloads(rawdata) {
 	downloadSummaryButton.type = "button";
 	downloadSummaryButton.addEventListener("click", _ => {
 		console.log("download table");
-		downloadTableAsCSV(rawdata.summary, "patient_alloc_summary.json");
+		downloadTableAsCSV(rawdata.summary, "patient_alloc_summary.csv");
 	});
 	downloadContainer.appendChild(downloadSummaryButton);
 
