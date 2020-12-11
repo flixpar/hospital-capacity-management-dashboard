@@ -16,7 +16,8 @@ function patient_redistribution(
 		initial_patients::Array{<:Real,1},
 		discharged_patients::Array{<:Real,2},
 		admitted_patients::Array{<:Real,2},
-		adj_matrix::BitArray{2}, los::Union{<:Distribution,Array{<:Real,1},Int};
+		adj_matrix::BitArray{2},
+		los::Union{<:Distribution,Array{<:Distribution,1},Array{<:Real,1},Int};
 
 		capacity_cushion::Union{Real,Array{<:Real,1}}=0.0,
 		no_artificial_overflow::Bool=false, no_worse_overflow::Bool=false,
@@ -72,7 +73,7 @@ function patient_redistribution(
 		transfer_budget = fill(Inf, N)
 	end
 
-	L = discretize_los(los, T)
+	L = discretize_los(los, N, T)
 
 	###############
 	#### Model ####
@@ -100,12 +101,11 @@ function patient_redistribution(
 	@expression(model, active_patients[i=1:N,t=1:T],
 		initial_patients[i]
 		- sum(discharged_patients[i,1:t])
-		+ sum(L[t-t₁+1] * (
+		+ sum(L[i,t-t₁+1] * (
 			admitted_patients[i,t₁]
 			- sum(sent[i,:,t₁])
 			+ sum(sent[:,i,t₁])
 		) for t₁ in 1:t)
-		# + sum(sent[i,:,t])
 	)
 	active_null = compute_active_null(initial_patients, discharged_patients, admitted_patients, L)
 
@@ -159,7 +159,8 @@ function patient_loadbalance(
 		initial_patients::Array{<:Real,1},
 		discharged_patients::Array{<:Real,2},
 		admitted_patients::Array{<:Real,2},
-		adj_matrix::BitArray{2}, los::Union{<:Distribution,Array{<:Real,1},Int};
+		adj_matrix::BitArray{2},
+		los::Union{<:Distribution,Array{<:Distribution,1},Array{<:Real,1},Int};
 
 		capacity_cushion::Union{Real,Array{<:Real,1}}=0.0,
 		no_artificial_overflow::Bool=false, no_worse_overflow::Bool=false,
@@ -193,7 +194,7 @@ function patient_loadbalance(
 		capacity_weights = ones(Int, C)
 	end
 
-	L = discretize_los(los, T)
+	L = discretize_los(los, N, T)
 
 	###############
 	#### Model ####
@@ -222,7 +223,7 @@ function patient_loadbalance(
 	@expression(model, active_patients[i=1:N,t=1:T],
 		initial_patients[i]
 		- sum(discharged_patients[i,1:t])
-		+ sum(L[t-t₁+1] * (
+		+ sum(L[i,t-t₁+1] * (
 			admitted_patients[i,t₁]
 			- sum(sent[i,:,t₁])
 			+ sum(sent[:,i,t₁])
@@ -282,7 +283,8 @@ function patient_hybridmodel(
 		initial_patients::Array{<:Real,1},
 		discharged_patients::Array{<:Real,2},
 		admitted_patients::Array{<:Real,2},
-		adj_matrix::BitArray{2}, los::Union{<:Distribution,Array{<:Real,1},Int};
+		adj_matrix::BitArray{2},
+		los::Union{<:Distribution,Array{<:Distribution,1},Array{<:Real,1},Int};
 
 		overflowmin_weight::Real=1.0,
 		loadbalance_weight::Real=0.25,
@@ -341,7 +343,7 @@ function patient_hybridmodel(
 		transfer_budget = fill(Inf, N)
 	end
 
-	L = discretize_los(los, T)
+	L = discretize_los(los, N, T)
 
 	###############
 	#### Model ####
@@ -371,7 +373,7 @@ function patient_hybridmodel(
 	@expression(model, active_patients[i=1:N,t=1:T],
 		initial_patients[i]
 		- sum(discharged_patients[i,1:t])
-		+ sum(L[t-t₁+1] * (
+		+ sum(L[i,t-t₁+1] * (
 			admitted_patients[i,t₁]
 			- sum(sent[i,:,t₁])
 			+ sum(sent[:,i,t₁])
@@ -437,7 +439,7 @@ end
 ############# Helper Functions ###############
 ##############################################
 
-function discretize_los(los, T)
+function discretize_los(los, N, T)
 	L = nothing
 	if isa(los, Int)
 		L = vcat(ones(Int, los), zeros(Int, T-los))
@@ -449,9 +451,16 @@ function discretize_los(los, T)
 		end
 	elseif isa(los, Distribution)
 		L = 1.0 .- cdf.(los, 0:T)
+	elseif los isa Array{<:Distribution,1}
+		L = [1.0 .- cdf(l, t) for l in los, t in 0:T]
 	else
 		error("Invalid length of stay distribution")
 	end
+
+	if ndims(L) == 1
+		L = permutedims(repeat(L, 1, N), (2,1))
+	end
+
 	return L
 end
 
@@ -460,7 +469,7 @@ function compute_active_null(initial_patients, discharged_patients, admitted_pat
 	active_null = [(
 			initial_patients[i]
 			- sum(discharged_patients[i,1:t])
-			+ sum(L[t-t₁+1] * admitted_patients[i,t₁] for t₁ in 1:t)
+			+ sum(L[i,t-t₁+1] * admitted_patients[i,t₁] for t₁ in 1:t)
 		) for i in 1:N, t in 1:T
 	]
 	return active_null
