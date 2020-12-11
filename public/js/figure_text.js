@@ -28,6 +28,8 @@ const transfersDescription = ``;
 
 const admittedDescription = ``;
 
+const dischargedDescription = ``;
+
 const metricsDescription = ``;
 
 function jhhsCaseDescription(start_date, end_date) {

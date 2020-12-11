@@ -1,17 +1,17 @@
-const admittedMargin = {left: 45, right: 5, top: 5, bottom: 5};
+const dischargedMargin = {left: 45, right: 5, top: 5, bottom: 5};
 
-const admittedContainerWidth = 600;
-const admittedSize = {"width": admittedContainerWidth, "height": 0.5*admittedContainerWidth};
+const dischargedContainerWidth = 600;
+const dischargedSize = {"width": dischargedContainerWidth, "height": 0.5*dischargedContainerWidth};
 
-const admittedAxisFont = "monospace";
-const admittedDefaultFont = "Helvetica";
+const dischargedAxisFont = "monospace";
+const dischargedDefaultFont = "Helvetica";
 
-const admittedAxisFontSize = 8;
-const admittedTitleFontSize = 10;
+const dischargedAxisFontSize = 8;
+const dischargedTitleFontSize = 10;
 
-const admittedLineWidth = 2;
+const dischargedLineWidth = 2;
 
-const admittedLineColors = {
+const dischargedLineColors = {
 	"BMC":  "#006C67",
 	"HCGH": "#B9314F",
 	"JHH":  "#454E9E",
@@ -22,32 +22,32 @@ const admittedLineColors = {
 };
 
 
-function createAdmittedPlot(response, add_description=true) {
+function createDischargedPlot(response, add_description=true) {
 	const section = document.getElementById("section-results-admdis");
 	if (add_description) {
 		let description = document.createElement("p");
-		description.innerHTML = admittedDescription;
+		description.innerHTML = dischargedDescription;
 		section.appendChild(description);
 	}
 
-	const fig = makeAdmittedPlot(response);
+	const fig = makeDischargedPlot(response);
 	section.appendChild(fig);
 }
 
-function makeAdmittedPlot(response) {
-	const svg = d3.create("svg").attr("viewBox", [0, 0, admittedSize.width, admittedSize.height]);
+function makeDischargedPlot(response) {
+	const svg = d3.create("svg").attr("viewBox", [0, 0, dischargedSize.width, dischargedSize.height]);
 
 	const N = response.beds.length;
 	const T = response.config.dates.length;
 
-	const plotSize = {width: (admittedSize.width - admittedMargin.left - admittedMargin.right) / N, height: admittedSize.height};
+	const plotSize = {width: (dischargedSize.width - dischargedMargin.left - dischargedMargin.right) / N, height: dischargedSize.height};
 	const plotMargin = {left: 5, right: 5, top: 12, bottom: 25};
 
-	const data = computeAdmittedData(response);
+	const data = computeDischargedData(response);
 
-	const maxAdmitted = d3.max(data.admitted, x => d3.max(x, y => y.value));
-	const maxAdmittedNull = d3.max(data.admitted_null, x => d3.max(x, y => y.value));
-	const maxY = d3.max([maxAdmitted, maxAdmittedNull]);
+	const maxDischarged = d3.max(data.discharged, x => d3.max(x, y => y.value));
+	const maxDischargedNull = d3.max(data.discharged_null, x => d3.max(x, y => y.value));
+	const maxY = d3.max([maxDischarged, maxDischargedNull]);
 
 	const xScale = d3.scaleUtc()
 		.domain(d3.extent(response.config.dates, d => new Date(Date.parse(d))))
@@ -56,9 +56,9 @@ function makeAdmittedPlot(response) {
 		.domain([0, maxY]).nice()
 		.range([plotSize.height - plotMargin.bottom, plotMargin.top]);
 
-	let g1 = svg.append("g").attr("transform", `translate(0, ${admittedMargin.top})`);
-	const marginSize = {width: admittedMargin.left, height: plotSize.height};
-	g1 = makeYAxisAdmitted(g1, xScale, yScale, marginSize, plotMargin);
+	let g1 = svg.append("g").attr("transform", `translate(0, ${dischargedMargin.top})`);
+	const marginSize = {width: dischargedMargin.left, height: plotSize.height};
+	g1 = makeYAxisDischarged(g1, xScale, yScale, marginSize, plotMargin);
 
 	const ind = d3.range(N).sort((i,j) => {
 		if (response.config.node_names[i] == "BCC") {
@@ -68,23 +68,23 @@ function makeAdmittedPlot(response) {
 	});	let tooltips = [];
 	for (let i = 0; i < N; i++) {
 		const j = ind[i];
-		let g = svg.append("g").attr("transform", `translate(${admittedMargin.left + (i*plotSize.width)}, ${admittedMargin.top})`);
-		g,tooltips[i] = plotAdmitted(g, xScale, yScale, data, response, j, plotSize, plotMargin);
+		let g = svg.append("g").attr("transform", `translate(${dischargedMargin.left + (i*plotSize.width)}, ${dischargedMargin.top})`);
+		g,tooltips[i] = plotDischarged(g, xScale, yScale, data, response, j, plotSize, plotMargin);
 	}
 	for (let i = 0; i < N; i++) {
-		let g = svg.append("g").attr("transform", `translate(${admittedMargin.left + (i*plotSize.width)}, ${admittedMargin.top})`);
+		let g = svg.append("g").attr("transform", `translate(${dischargedMargin.left + (i*plotSize.width)}, ${dischargedMargin.top})`);
 		g.append(() => tooltips[i].node);
 	}
 
 	return svg.node();
 }
 
-function plotAdmitted(svg, xScale, yScale, data, response, locIdx, plotSize, plotMargin) {
+function plotDischarged(svg, xScale, yScale, data, response, locIdx, plotSize, plotMargin) {
 
 	const xAxis = g => g
 		.attr("transform", `translate(0,${plotSize.height - plotMargin.bottom})`)
-		.style("font-family", admittedAxisFont)
-		.style("font-size", admittedAxisFontSize)
+		.style("font-family", dischargedAxisFont)
+		.style("font-size", dischargedAxisFontSize)
 		.call(d3.axisBottom(xScale)
 					.ticks(d3.timeWeek.every(3))
 					.tickSizeOuter(4)
@@ -120,8 +120,8 @@ function plotAdmitted(svg, xScale, yScale, data, response, locIdx, plotSize, plo
 		.attr("x", plotSize.width/2)
 		.attr("y", 5)
 		.attr("text-anchor", "middle")
-		.style("font-family", admittedDefaultFont)
-		.style("font-size", admittedTitleFontSize+"px")
+		.style("font-family", dischargedDefaultFont)
+		.style("font-size", dischargedTitleFontSize+"px")
 		.text(response.config.node_names[locIdx]);
 
 	const line = d3.line()
@@ -130,19 +130,19 @@ function plotAdmitted(svg, xScale, yScale, data, response, locIdx, plotSize, plo
 		.y(d => yScale(d.value));
 
 	const locName = response.config.node_names[locIdx];
-	const locColor = (locName in admittedLineColors) ? admittedLineColors[locName] : admittedLineColors["default"];
+	const locColor = (locName in dischargedLineColors) ? dischargedLineColors[locName] : dischargedLineColors["default"];
 
 	svg.append("path")
-		.datum(data["admitted"][locIdx])
+		.datum(data["discharged"][locIdx])
 		.attr("fill", "none")
 		.attr("stroke", locColor)
-		.attr("stroke-width", admittedLineWidth)
+		.attr("stroke-width", dischargedLineWidth)
 		.attr("stroke-linejoin", "round")
 		.attr("stroke-linecap", "round")
 		.attr("d", line);
 
 	svg.append("path")
-		.datum(data["admitted_null"][locIdx])
+		.datum(data["discharged_null"][locIdx])
 		.attr("fill", "none")
 		.attr("stroke", locColor)
 		.attr("stroke-width", lineWidth/1.5)
@@ -151,11 +151,11 @@ function plotAdmitted(svg, xScale, yScale, data, response, locIdx, plotSize, plo
 		.attr("opacity", 0.25)
 		.attr("d", line);
 
-	const tooltip = new AdmittedTooltip(xScale,yScale);
+	const tooltip = new DischargedTooltip(xScale,yScale);
 
 	const locIdxAlt = response.config.node_names.slice(0).sort().indexOf(response.config.node_names[locIdx]);
-	const xOffset = admittedMargin.left + (locIdxAlt * plotSize.width);
-	const yOffset = admittedMargin.top;
+	const xOffset = dischargedMargin.left + (locIdxAlt * plotSize.width);
+	const yOffset = dischargedMargin.top;
 
 	svg.append("rect")
 		.attr("x", plotMargin.left)
@@ -167,20 +167,20 @@ function plotAdmitted(svg, xScale, yScale, data, response, locIdx, plotSize, plo
 		.attr("pointer-events", "visible");
 
 	const lines = [
-		data["admitted"][locIdx],
-		data["admitted_null"][locIdx],
+		data["discharged"][locIdx],
+		data["discharged_null"][locIdx],
 	];
 
 	let parentSVG = svg.node().parentElement;
 	svg.selectAll(`#box-${locIdx}`).on("mousemove", event => {
 		const svgWidth = parentSVG.clientWidth;
-		const scaleFactor = admittedSize.width / svgWidth;
+		const scaleFactor = dischargedSize.width / svgWidth;
 		const pointerX = ((event.offsetX * scaleFactor) - xOffset);
 		const pointerY = ((event.offsetY * scaleFactor) - yOffset);
 		if (pointerX < 0 || pointerX > plotSize.width || pointerY < 0 || pointerY > plotSize.height) {
 			return;
 		}
-		const d = admittedBisect(lines, xScale.invert(pointerX), yScale.invert(pointerY));
+		const d = dischargedBisect(lines, xScale.invert(pointerX), yScale.invert(pointerY));
 		tooltip.show(d);
 	});
 	svg.select(`#box-${locIdx}`).on("mouseleave", () => tooltip.hide());
@@ -188,11 +188,11 @@ function plotAdmitted(svg, xScale, yScale, data, response, locIdx, plotSize, plo
 	return svg, tooltip;
 }
 
-function makeYAxisAdmitted(svg, xScale, yScale, plotSize, plotMargin) {
+function makeYAxisDischarged(svg, xScale, yScale, plotSize, plotMargin) {
 	const yAxis = g => g
 	.attr("transform", `translate(35,0)`)
-	.style("font-family", admittedAxisFont)
-	.style("font-size", admittedAxisFontSize)
+	.style("font-family", dischargedAxisFont)
+	.style("font-size", dischargedAxisFontSize)
 	.call(d3.axisRight(yScale)
 				.ticks(4)
 				.tickSize(6)
@@ -215,55 +215,61 @@ function makeYAxisAdmitted(svg, xScale, yScale, plotSize, plotMargin) {
 		.call(yAxis);
 
 	svg.append("text")
-		.attr("transform", `translate(8,${admittedSize.height/2 + 50}) rotate(-90)`)
-		.attr("font-family", admittedDefaultFont)
+		.attr("transform", `translate(8,${dischargedSize.height/2 + 50}) rotate(-90)`)
+		.attr("font-family", dischargedDefaultFont)
 		.attr("font-size", 10)
-		.text("COVID Patient Admissions");
+		.text("COVID Patient Discharges");
 
 	return svg;
 }
 
-function computeAdmittedData(response) {
+function computeDischargedData(response) {
 	const N = response.beds.length;
 	const T = response.config.dates.length;
 
 	const nodeInds = d3.range(N);
 
-	let admitted_data = [];
-	let admitted_null_data = [];
+	let discharged_data = [];
+	let discharged_null_data = [];
 	for (let i = 0; i < N; i++) {
-		admitted_data[i] = [];
-		admitted_null_data[i] = [];
+		discharged_data[i] = [];
+		discharged_null_data[i] = [];
 
 		for (let t = 0; t < T; t++) {
 			const d = new Date(Date.parse(response.config.dates[t]));
-			admitted_data[i][t] = {
+			discharged_data[i][t] = {
 				"date": d,
-				"value": (
-					response.admitted[i][t]
+				"value": (t == 0) ? 0 : (
+					response.active[i][t-1]
+					+ response.admitted[i][t]
 					- d3.sum(nodeInds.map(j => response.sent[i][j][t]))
 					+ d3.sum(nodeInds.map(j => response.sent[j][i][t]))
+					- response.active[i][t]
 				),
 				"data_type": "With Transfers",
 				"node_name": response.config.node_names[i],
 			};
-			admitted_null_data[i][t] = {
+			discharged_null_data[i][t] = {
 				"date": d,
-				"value": response.admitted[i][t],
+				"value": (t == 0) ? 0 : (
+					response.active_null[i][t-1]
+					+ response.admitted[i][t]
+					- response.active_null[i][t]
+				),
 				"data_type": "Without Transfers",
 				"node_name": response.config.node_names[i],
 			};
 		}
 	}
 	const data = {
-		"admitted": admitted_data,
-		"admitted_null": admitted_null_data,
+		"discharged": discharged_data,
+		"discharged_null": discharged_null_data,
 	};
 
 	return data;
 }
 
-class AdmittedTooltip {
+class DischargedTooltip {
 	constructor(x,y) {
 		this.x = x;
 		this.y = y;
@@ -272,8 +278,8 @@ class AdmittedTooltip {
 		let tmpNode = tmpSVG.append("g")
 			.attr("pointer-events", "none")
 			.attr("display", "none")
-			.attr("font-family", admittedAxisFont)
-			.attr("font-size", admittedAxisFontSize)
+			.attr("font-family", dischargedAxisFont)
+			.attr("font-size", dischargedAxisFontSize)
 			.attr("text-anchor", "middle");
 
 		tmpNode.append("rect")
@@ -317,7 +323,7 @@ class AdmittedTooltip {
 		this.hospNameElem.textContent = d.node_name;
 		this.tfrElem.textContent = d.data_type;
 		this.dateElem.textContent = d3.timeFormat("%Y-%m-%d")(d.date);
-		this.yvalElem.textContent = "Admissions: " + d.value.toFixed(0);
+		this.yvalElem.textContent = "Discharges: " + d.value.toFixed(0);
 	}
 
 	hide() {
@@ -325,11 +331,11 @@ class AdmittedTooltip {
 	}
 }
 
-const admittedBisectDate = d3.bisector(d => d.date).center;
+const dischargedBisectDate = d3.bisector(d => d.date).center;
 
-function admittedBisect(lines, date, yval) {
+function dischargedBisect(lines, date, yval) {
 	const line1 = lines[0];
-	const i = admittedBisectDate(line1, date, 1);
+	const i = dischargedBisectDate(line1, date, 1);
 	const d = line1[i].date;
 	const v = lines.map(l => l.findIndex(x => x.date == d));
 	const j = d3.minIndex(v.map((x,k) => Math.abs(lines[k][x].value - yval)));
