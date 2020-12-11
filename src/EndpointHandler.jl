@@ -45,6 +45,11 @@ function handle_patients_request(
 		error("Invalid los distribution selection: $(los_param)")
 	end
 
+	if patient_type == :ward
+		transfer_budget_dict["bcc"] = "0"
+		surge_preferences_dict["bcc"] = "1.0"
+	end
+
 	transfer_budget = [parse(Int, transfer_budget_dict[lowercase(k)]) for k in data.node_names]
 	surge_preferences = [parse(Float64, surge_preferences_dict[lowercase(k)]) for k in data.node_names]
 

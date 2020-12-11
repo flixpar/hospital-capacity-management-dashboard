@@ -6,6 +6,7 @@ const tfrBarColors = {
 	"JHH":  "#454E9E",
 	"SH":   "#95B46A",
 	"SMH":  "#B6C2D9",
+	"BCC":  "#9370DB",
 	"default": "blue",
 };
 

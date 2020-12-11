@@ -60,10 +60,9 @@ function load_jhhs(
 	adj = (data.dist_matrix .<= 1)
 	node_locations = Dict(h => data.locations_latlong[h] for h in hospitals)
 
-	# extent = (extent_type = :states, extent_regions = ["Maryland"])
 	extent = (extent_type = :points, extent_regions = [])
 
-	return (
+	outdata = (
 		initial = initial,
 		discharged = discharged,
 		admitted = admitted,
@@ -76,6 +75,12 @@ function load_jhhs(
 		extent = extent,
 		capacity_names = capacity_names,
 	)
+
+	if patient_type == :ward
+		outdata = add_bcc(outdata)
+	end
+
+	return outdata
 end
 
 function los_dist_default(bedtype::Symbol)
@@ -86,6 +91,35 @@ function los_dist_default(bedtype::Symbol)
 	else
 		return Gamma(2.244, 4.4988)
 	end
+end
+
+function add_bcc(data)
+	N, T = size(data.admitted)
+	C = size(data.capacity, 2)
+
+	bcc_cap = 200
+
+	adj = BitArray([
+		data.adj      ones(Bool,N);
+		ones(Bool,N)'            0;
+	])
+
+	node_locations = data.node_locations
+	node_locations["BCC"] = (lat = 39.2853908, long = -76.6171126)
+
+	outdata = merge(data, (
+		initial = vcat(data.initial, 0),
+		discharged = vcat(data.discharged, zeros(T)'),
+		admitted = vcat(data.admitted, zeros(T)'),
+		beds = vcat(data.beds, bcc_cap),
+		capacity = vcat(data.capacity, fill(bcc_cap, C)'),
+		adj = adj,
+		node_locations = node_locations,
+		node_names = vcat(data.node_names, "BCC"),
+		node_names_abbrev = vcat(data.node_names_abbrev, "BCC"),
+	))
+
+	return outdata
 end
 
 end
