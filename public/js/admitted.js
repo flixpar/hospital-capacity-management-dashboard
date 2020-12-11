@@ -17,6 +17,7 @@ const admittedLineColors = {
 	"JHH":  "#454E9E",
 	"SH":   "#95B46A",
 	"SMH":  "#B6C2D9",
+	"BCC":  "#9370DB",
 	"default": "blue",
 };
 
@@ -59,8 +60,12 @@ function makeAdmittedPlot(response) {
 	const marginSize = {width: admittedMargin.left, height: plotSize.height};
 	g1 = makeYAxisAdmitted(g1, xScale, yScale, marginSize, plotMargin);
 
-	const ind = d3.range(N).sort((i,j) => (response.config.node_names[i] <= response.config.node_names[j]) ? -1 : 1);
-	let tooltips = [];
+	const ind = d3.range(N).sort((i,j) => {
+		if (response.config.node_names[i] == "BCC") {
+			return 1;
+		}
+		return (response.config.node_names[i] <= response.config.node_names[j]) ? -1 : 1;
+	});	let tooltips = [];
 	for (let i = 0; i < N; i++) {
 		const j = ind[i];
 		let g = svg.append("g").attr("transform", `translate(${admittedMargin.left + (i*plotSize.width)}, ${admittedMargin.top})`);
