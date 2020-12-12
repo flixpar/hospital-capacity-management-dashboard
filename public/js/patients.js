@@ -26,21 +26,9 @@ function handleResponse(response, status, xhr) {
 
 	makeSections();
 
-	if (response.config.region == "new_jersey") {
-		const d = njCaseDescription(response.config.start_date, response.config.end_date);
-		let description = document.createElement("p");
-		description.innerHTML = d;
-		getSection("casestudy-info").appendChild(description);
-	} else if (response.config.region == "northeast") {
-		const d = neCaseDescription(response.config.start_date, response.config.end_date);
-		let description = document.createElement("p");
-		description.innerHTML = d;
-		getSection("casestudy-info").appendChild(description);
-	} else {
-		let section = getSection("casestudy-info");
-		let sectionContainer = section.parentElement;
-		sectionContainer.remove();
-	}
+	let section = getSection("casestudy-info");
+	let sectionContainer = section.parentElement;
+	sectionContainer.remove();
 
 	createStatsSummary(response);
 	createSurgeCapacityMetrics(response);
