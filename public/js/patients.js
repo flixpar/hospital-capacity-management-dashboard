@@ -49,6 +49,7 @@ function handleResponse(response, status, xhr) {
 
 	createJHHSDashboard(response);
 	createTransfersBreakdownPlot(response);
+	createCapacityTimeline(response);
 
 	createAdmittedPlot(response);
 	createDischargedPlot(response);

@@ -34,6 +34,9 @@ function createTransfersBreakdownPlot(response, add_description=true) {
 	colorscaleTitleElem.style.fontSize = "14px";
 	colorscaleTitleElem.style.textAlign = "center";
 	hospColorscaleElem.insertBefore(colorscaleTitleElem, hospColorscaleElem.childNodes[0]);
+
+	let hr = document.createElement("hr");
+	section.appendChild(hr);
 }
 
 function makeTransfersBreakdownPlot(response) {

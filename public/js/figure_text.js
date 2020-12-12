@@ -32,6 +32,8 @@ const dischargedDescription = ``;
 
 const metricsDescription = ``;
 
+const capacityTimelineDescription = ``;
+
 function jhhsCaseDescription(start_date, end_date) {
 	return `Johns Hopkins Health System from ${start_date} to ${end_date}.`;
 }
