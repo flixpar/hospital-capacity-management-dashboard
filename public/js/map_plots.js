@@ -236,6 +236,8 @@ function makeMap(svg, rawdata, data, links, colorscale, geometries, plotWidth, p
 	const dates = rawdata.config.dates.map(d => new Date(Date.parse(d)))
 	const T = dates.length;
 
+	const tooltip = new MapTooltip(svg, rawdata);
+
 	const selected_extent = getExtent(rawdata.config, geometries);
 	let map_projection = d3.geoMercator().fitExtent(
 		[
@@ -312,7 +314,7 @@ function makeMap(svg, rawdata, data, links, colorscale, geometries, plotWidth, p
 	let pts = svg.selectAll("points")
 		.data(rawdata.config.node_names)
 		.enter().append("path")
-		.style("fill", d => {
+		.attr("fill", d => {
 			if (!colorRegions) {
 				const j = rawdata.config.node_names.indexOf(d);
 				if (j >= 0) {
@@ -325,15 +327,17 @@ function makeMap(svg, rawdata, data, links, colorscale, geometries, plotWidth, p
 			}
 			return "lightgray";
 		})
-		.style("stroke", "white")
-		.style("stroke-width", "0.5px")
+		.attr("stroke", "white")
+		.attr("stroke-width", "0.5px")
 		.style("transform-box", "fill-box")
 		.attr("d", (d,i) => {
 			const l = rawdata.config.node_locations[d];
 			const r = nodeSizeScale(i) * pointSizeMult;
 			const _p = p.pointRadius(r);
 			return _p({type: "Point", coordinates: [l.long, l.lat]});
-		});
+		})
+		.on("mouseover", (e,d) => tooltip.show(e,d))
+		.on("mouseout",  (e,d) => tooltip.hide(e,d));
 
 	if (title != null) {
 		svg.append("text")
@@ -393,7 +397,7 @@ function makeMap(svg, rawdata, data, links, colorscale, geometries, plotWidth, p
 		}
 
 		if (!colorRegions) {
-			pts.style("fill", (d,i) => colorscale(data[i][t]));
+			pts.attr("fill", (d,i) => colorscale(data[i][t]));
 		}
 
 		svg.selectAll("#date-label").remove();
@@ -421,6 +425,8 @@ function makeMap(svg, rawdata, data, links, colorscale, geometries, plotWidth, p
 				.attr("stroke-linecap", "butt")
 				.attr("marker-end", "url(#arrow)");
 		}
+
+		tooltip.refresh(t);
 	}
 
 	if (dynamic) {
@@ -447,8 +453,109 @@ function makeMap(svg, rawdata, data, links, colorscale, geometries, plotWidth, p
 			});
 	}
 
+	svg.append(() => tooltip.node);
+
 	return svg.node();
 }
+
+////////////////////////////
+///////// Tooltip //////////
+////////////////////////////
+
+class MapTooltip {
+	constructor(svg, response) {
+		this.svg = svg;
+		this.response = response;
+		this.highlight = null;
+
+		let tmpSVG = d3.create("svg");
+		let tooltipNode = tmpSVG.append("g")
+			.attr("pointer-events", "none")
+			.attr("display", "none")
+			.attr("font-family", "monospace")
+			.attr("font-size", 12)
+			.attr("text-anchor", "middle");
+
+		tooltipNode.append("rect")
+			.attr("x", -60)
+			.attr("y", 8)
+			.attr("width", 120)
+			.attr("height", 24)
+			.attr("fill", "white")
+			.attr("stroke", "gray")
+			.attr("stroke-width", 1.5);
+		this.topTab = tooltipNode.append("rect")
+			.attr("transform", "translate(0, 2) rotate(45)")
+			.attr("width", 12)
+			.attr("height", 12)
+			.attr("fill", "white")
+			.attr("stroke", "gray")
+			.attr("stroke-width", 1.0);
+		this.bottomTab = tooltipNode.append("rect")
+			.attr("transform", "translate(0, 35) rotate(45)")
+			.attr("width", 12)
+			.attr("height", 12)
+			.attr("fill", "white")
+			.attr("stroke", "gray")
+			.attr("stroke-width", 1.0);
+		tooltipNode.append("rect")
+			.attr("x", -60)
+			.attr("y", 8)
+			.attr("width", 120)
+			.attr("height", 24)
+			.attr("fill", "white");
+
+		this.tooltipNode = tooltipNode;
+
+		this.textLine1 = tooltipNode.append("text").attr("y", "24").node();
+
+		this.node = tooltipNode.node();
+	}
+
+	show(e,d) {
+		this.node.removeAttribute("display");
+
+		this.textLine1.textContent = d;
+
+		this.highlight = e.srcElement.cloneNode();
+		this.highlight.setAttribute("fill", "none");
+		this.highlight.setAttribute("stroke", "white");
+		this.highlight.setAttribute("stroke-width", "2px");
+		e.srcElement.parentElement.appendChild(this.highlight);
+
+		const bbox = e.srcElement.getBBox();
+
+		const xCenter = bbox.x + (bbox.width / 2);
+		const yCenter = bbox.y + (bbox.height / 2);
+		const yOffset = bbox.height / 2;
+
+		const positionBottom = (yCenter+yOffset+40 <= mapHeight);
+
+		if (positionBottom) {
+			this.node.setAttribute("transform", `translate(${xCenter},${yCenter+yOffset})`);
+			this.topTab.node().removeAttribute("display");
+			this.bottomTab.node().setAttribute("display", "none");
+		} else {
+			this.node.setAttribute("transform", `translate(${xCenter},${yCenter-yOffset-45-10})`);
+			this.topTab.node().setAttribute("display", "none");
+			this.bottomTab.node().removeAttribute("display");
+		}
+	}
+
+	hide(e,d) {
+		if (this.highlight != null) {
+			this.highlight.remove();
+			this.highlight = null;
+		}
+		this.node.setAttribute("display", "none");
+	}
+
+	refresh(t) {
+		this.node.remove();
+		this.svg.append(() => this.node);
+	}
+}
+
 
 ////////////////////////////
 /////// Extract Data ///////
