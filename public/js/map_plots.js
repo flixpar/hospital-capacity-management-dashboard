@@ -129,8 +129,8 @@ function makeGroupedChoropleth(make_dynamic, rawdata, data1, data2, links, color
 	let g2 = svg.append("g").attr("transform", `translate(${mapPlotMargin.left + plotWidth}, ${mapPlotMargin.top})`);
 	let g3 = svg.append("g").attr("transform", `translate(${mapPlotMargin.left + 2*plotWidth}, ${mapPlotMargin.top})`);
 
-	g1 = makeMap(g1, rawdata, data1,   null, colorscale, geometries, plotWidth, plotHeight, make_dynamic, "(Without Transfers)");
-	g2 = makeMap(g2, rawdata, data2, links, colorscale, geometries, plotWidth, plotHeight, make_dynamic, "(With Transfers)");
+	g1 = makeMap(g1, svg, rawdata, data1,   null, colorscale, geometries, plotWidth, plotHeight, make_dynamic, "(Without Transfers)");
+	g2 = makeMap(g2, svg, rawdata, data2, links, colorscale, geometries, plotWidth, plotHeight, make_dynamic, "(With Transfers)");
 	g3 = makeColorbar(g3, colorscale, colorbar_label);
 
 	if (debugMap) {
@@ -164,7 +164,7 @@ function makeSingleChoropleth(make_dynamic, rawdata, data1, links, colorscale, g
 	let g1 = svg.append("g").attr("transform", `translate(${mapPlotMargin.left}, ${mapPlotMargin.top})`);
 	let g2 = svg.append("g").attr("transform", `translate(${mapPlotMargin.left + plotWidth}, ${mapPlotMargin.top})`);
 
-	g1 = makeMap(g1, rawdata, data1, links, colorscale, geometries, plotWidth, plotHeight, make_dynamic, plot_title);
+	g1 = makeMap(g1, svg, rawdata, data1, links, colorscale, geometries, plotWidth, plotHeight, make_dynamic, plot_title);
 	g2 = makeColorbar(g2, colorscale, "Required Surge Capacity (Bed-Days)");
 
 	return svg.node();
@@ -222,7 +222,7 @@ function makeColorbar(svg, colorscale, colorbarLabel=null) {
 ///////// Plot Maps ////////
 ////////////////////////////
 
-function makeMap(svg, rawdata, data, links, colorscale, geometries, plotWidth, plotHeight, dynamic=true, title=null) {
+function makeMap(svg, globalSVG, rawdata, data, links, colorscale, geometries, plotWidth, plotHeight, dynamic=true, title=null) {
 
 	if (dynamic) {
 		while (mapPlotIntervals.length != 0) {
@@ -236,7 +236,7 @@ function makeMap(svg, rawdata, data, links, colorscale, geometries, plotWidth, p
 	const dates = rawdata.config.dates.map(d => new Date(Date.parse(d)))
 	const T = dates.length;
 
-	const tooltip = new MapTooltip(svg, rawdata);
+	const tooltip = new MapTooltip(svg, globalSVG, rawdata);
 
 	const selected_extent = getExtent(rawdata.config, geometries);
 	let map_projection = d3.geoMercator().fitExtent(
@@ -425,8 +425,6 @@ function makeMap(svg, rawdata, data, links, colorscale, geometries, plotWidth, p
 				.attr("stroke-linecap", "butt")
 				.attr("marker-end", "url(#arrow)");
 		}
-
-		tooltip.refresh(t);
 	}
 
 	if (dynamic) {
@@ -453,7 +451,7 @@ function makeMap(svg, rawdata, data, links, colorscale, geometries, plotWidth, p
 			});
 	}
 
-	svg.append(() => tooltip.node);
+	tooltip.build();
 
 	return svg.node();
 }
@@ -463,20 +461,26 @@ function makeMap(svg, rawdata, data, links, colorscale, geometries, plotWidth, p
 ////////////////////////////
 
 class MapTooltip {
-	constructor(svg, response) {
-		this.svg = svg;
+	constructor(svg, globalSVG, response) {
+		this.svg = globalSVG;
 		this.response = response;
 		this.highlight = null;
 
+		console.log(svg.node().getAttribute("transform"));
+
 		let tmpSVG = d3.create("svg");
-		let tooltipNode = tmpSVG.append("g")
+		let tooltipContainer = tmpSVG.append("g")
+			.attr("transform", svg.node().getAttribute("transform"));
+
+		let tooltipNode = tooltipContainer.append("g")
+			// .attr("transform", svg.node().getAttribute("transform"))
 			.attr("pointer-events", "none")
 			.attr("display", "none")
 			.attr("font-family", "monospace")
 			.attr("font-size", 12)
 			.attr("text-anchor", "middle");
 
-		tooltipNode.append("rect")
+		this.bubble = tooltipNode.append("rect")
 			.attr("x", -60)
 			.attr("y", 8)
 			.attr("width", 120)
@@ -498,7 +502,7 @@ class MapTooltip {
 			.attr("fill", "white")
 			.attr("stroke", "gray")
 			.attr("stroke-width", 1.0);
-		tooltipNode.append("rect")
+		this.bubbleBackground = tooltipNode.append("rect")
 			.attr("x", -60)
 			.attr("y", 8)
 			.attr("width", 120)
@@ -510,6 +514,7 @@ class MapTooltip {
 		this.textLine1 = tooltipNode.append("text").attr("y", "24").node();
 
 		this.node = tooltipNode.node();
+		this.tooltipContainer = tooltipContainer.node();
 	}
 
 	show(e,d) {
@@ -521,7 +526,7 @@ class MapTooltip {
 		this.highlight.setAttribute("fill", "none");
 		this.highlight.setAttribute("stroke", "white");
 		this.highlight.setAttribute("stroke-width", "2px");
-		e.srcElement.parentElement.appendChild(this.highlight);
+		e.srcElement.parentElement.insertBefore(this.highlight, e.srcElement.nextSibling);
 
 		const bbox = e.srcElement.getBBox();
 
@@ -540,6 +545,14 @@ class MapTooltip {
 			this.topTab.node().setAttribute("display", "none");
 			this.bottomTab.node().removeAttribute("display");
 		}
+
+		const labelWidth = d.length * 12 * 0.6 + 20;
+		if (labelWidth > 120) {
+			this.bubble.attr("width", labelWidth);
+			this.bubble.attr("x", -labelWidth/2);
+			this.bubbleBackground.attr("width", labelWidth);
+			this.bubbleBackground.attr("x", -labelWidth/2);
+		}
 	}
 
 	hide(e,d) {
@@ -550,9 +563,8 @@ class MapTooltip {
 		this.node.setAttribute("display", "none");
 	}
 
-	refresh(t) {
-		this.node.remove();
-		this.svg.append(() => this.node);
+	build() {
+		this.svg.append(() => this.tooltipContainer);
 	}
 }
 
