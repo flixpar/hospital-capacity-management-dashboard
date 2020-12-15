@@ -13,6 +13,8 @@ export los_dist_default
 
 basepath = joinpath(dirname(@__FILE__), "../")
 
+ENABLE_BCC = false
+
 
 function load_jhhs(
 		scenario::Symbol,
@@ -76,7 +78,7 @@ function load_jhhs(
 		capacity_names = capacity_names,
 	)
 
-	if patient_type == :ward
+	if (patient_type == :ward) && ENABLE_BCC
 		outdata = add_bcc(outdata)
 	end
 
