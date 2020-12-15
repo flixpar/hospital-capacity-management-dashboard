@@ -50,6 +50,7 @@ function handle_patients_request(
 		surge_preferences_dict["bcc"] = "1.0"
 	end
 
+	transfer_budget_total = parse(Int, transfer_budget_dict["total"])
 	transfer_budget = [parse(Int, transfer_budget_dict[lowercase(k)]) for k in data.node_names]
 	surge_preferences = [parse(Float64, surge_preferences_dict[lowercase(k)]) for k in data.node_names]
 
@@ -72,7 +73,8 @@ function handle_patients_request(
 			admitted_smoothness_penalty=0.25,
 			capacity_cushion=(1.0-capacity_util),
 			objective_weights=objective_weights,
-			transfer_budget=transfer_budget,
+			transfer_budget=transfer_budget_total,
+			transfer_budget_bynode=transfer_budget,
 			constrain_integer=constrain_integer,
 			verbose=false,
 		)
@@ -89,7 +91,8 @@ function handle_patients_request(
 			active_smoothness_penalty=0.01,
 			admitted_smoothness_penalty=0.25,
 			capacity_cushion=(1.0-capacity_util),
-			transfer_budget=transfer_budget,
+			transfer_budget=transfer_budget_total,
+			transfer_budget_bynode=transfer_budget,
 			constrain_integer=constrain_integer,
 			verbose=false,
 		)
@@ -116,7 +119,8 @@ function handle_patients_request(
 			capacity_cushion=(1.0-capacity_util),
 			node_weights=node_weights,
 			capacity_weights=capacity_weights,
-			transfer_budget=transfer_budget,
+			transfer_budget=transfer_budget_total,
+			transfer_budget_bynode=transfer_budget,
 			constrain_integer=constrain_integer,
 			verbose=false,
 		)

@@ -27,7 +27,8 @@ function patient_redistribution(
 		capacity_weights::Array{<:Real,1}=Int[],
 		node_weights::Array{<:Real,1}=Int[],
 		objective_weights::Array{<:Real}=Int[],
-		transfer_budget::Array{<:Real,1}=Int[],
+		transfer_budget::Real=-1,
+		transfer_budget_bynode::Array{<:Real,1}=Int[],
 
 		sendreceive_gap::Int=0, min_send_amt::Real=0,
 		balancing_thresh::Real=1.0, balancing_penalty::Real=0,
@@ -69,8 +70,8 @@ function patient_redistribution(
 	objective_weights = objective_weights .* node_weights
 	objective_weights = objective_weights .* capacity_weights'
 
-	if isempty(transfer_budget)
-		transfer_budget = fill(Inf, N)
+	if isempty(transfer_budget_bynode)
+		transfer_budget_bynode = fill(Inf, N)
 	end
 
 	L = discretize_los(los, N, T)
@@ -134,7 +135,7 @@ function patient_redistribution(
 	enforce_no_worse_overflow!(model, no_worse_overflow, active_patients, active_null, capacity)
 	enforce_minsendamt!(model, sent, min_send_amt)
 	enforce_sendreceivegap!(model, sent, sendreceive_gap)
-	enforce_transferbudget!(model, sent, transfer_budget)
+	enforce_transferbudget!(model, sent, transfer_budget, transfer_budget_bynode)
 
 	add_sent_penalty!(model, sent, objective, sent_penalty)
 	add_smoothness_penalty!(model, sent, objective, smoothness_penalty)
@@ -168,7 +169,8 @@ function patient_loadbalance(
 		active_smoothness_penalty::Real=0, admitted_smoothness_penalty::Real=0,
 		constrain_integer::Bool=false,
 		capacity_weights::Array{<:Real,1}=Int[],
-		transfer_budget::Array{<:Real,1}=Int[],
+		transfer_budget::Real=-1,
+		transfer_budget_bynode::Array{<:Real,1}=Int[],
 
 		sendreceive_gap::Int=0, min_send_amt::Real=0,
 		setup_cost::Real=0,
@@ -193,6 +195,10 @@ function patient_loadbalance(
 
 	if isempty(capacity_weights)
 		capacity_weights = ones(Int, C)
+	end
+
+	if isempty(transfer_budget_bynode)
+		transfer_budget_bynode = fill(Inf, N)
 	end
 
 	L = discretize_los(los, N, T)
@@ -262,7 +268,7 @@ function patient_loadbalance(
 	enforce_no_worse_overflow!(model, no_worse_overflow, active_patients, active_null, capacity)
 	enforce_minsendamt!(model, sent, min_send_amt)
 	enforce_sendreceivegap!(model, sent, sendreceive_gap)
-	enforce_transferbudget!(model, sent, transfer_budget)
+	enforce_transferbudget!(model, sent, transfer_budget, transfer_budget_bynode)
 
 	add_sent_penalty!(model, sent, objective, sent_penalty)
 	add_smoothness_penalty!(model, sent, objective, smoothness_penalty)
@@ -299,7 +305,8 @@ function patient_hybridmodel(
 		capacity_weights::Array{<:Real,1}=Int[],
 		node_weights::Array{<:Real,1}=Int[],
 		objective_weights::Array{<:Real}=Int[],
-		transfer_budget::Array{<:Real,1}=Int[],
+		transfer_budget::Real=-1,
+		transfer_budget_bynode::Array{<:Real,1}=Int[],
 
 		sendreceive_gap::Int=0, min_send_amt::Real=0,
 		balancing_thresh::Real=1.0, balancing_penalty::Real=0,
@@ -341,8 +348,8 @@ function patient_hybridmodel(
 	objective_weights = objective_weights .* node_weights
 	objective_weights = objective_weights .* capacity_weights'
 
-	if isempty(transfer_budget)
-		transfer_budget = fill(Inf, N)
+	if isempty(transfer_budget_bynode)
+		transfer_budget_bynode = fill(Inf, N)
 	end
 
 	L = discretize_los(los, N, T)
@@ -417,7 +424,7 @@ function patient_hybridmodel(
 	enforce_no_worse_overflow!(model, no_worse_overflow, active_patients, active_null, capacity)
 	enforce_minsendamt!(model, sent, min_send_amt)
 	enforce_sendreceivegap!(model, sent, sendreceive_gap)
-	enforce_transferbudget!(model, sent, transfer_budget)
+	enforce_transferbudget!(model, sent, transfer_budget, transfer_budget_bynode)
 
 	add_sent_penalty!(model, sent, objective, sent_penalty)
 	add_smoothness_penalty!(model, sent, objective, smoothness_penalty)
@@ -557,12 +564,15 @@ function enforce_sendreceivegap!(model, sent, sendreceive_gap)
 end
 
 # enforce an upper limit on the number of transfers per hospital-day
-function enforce_transferbudget!(model, sent, transfer_budget)
+function enforce_transferbudget!(model, sent, transfer_budget, transfer_budget_bynode)
 	N, _, T = size(sent)
 	for i in 1:N
-		if !isinf(transfer_budget[i])
-			@constraint(model, [t=1:T], sum(sent[i,:,t]) <= transfer_budget[i])
+		if !isinf(transfer_budget_bynode[i])
+			@constraint(model, [t=1:T], sum(sent[i,:,t]) <= transfer_budget_bynode[i])
 		end
+	end
+	if transfer_budget >= 0
+		@constraint(model, [t=1:T], sum(sent[:,:,t]) <= transfer_budget)
 	end
 end
 

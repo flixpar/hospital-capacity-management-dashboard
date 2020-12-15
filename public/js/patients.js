@@ -623,7 +623,7 @@ function setDefaultDates() {
 setDefaultDates();
 
 function setDefaultTransferBudget() {
-	const hospital_extensions = ["bmc", "hcgh", "jhh", "sh", "smh"];
+	const hospital_extensions = ["bmc", "hcgh", "jhh", "sh", "smh", "total"];
 	const bedtype = document.getElementById("form-patient-type").value;
 
 	let defaultvalue = 10;
@@ -675,6 +675,7 @@ function sendUpdateQuery() {
 		jhh: document.getElementById("form-transferbudget-jhh").value,
 		sh: document.getElementById("form-transferbudget-sh").value,
 		smh: document.getElementById("form-transferbudget-smh").value,
+		total: document.getElementById("form-transferbudget-total").value,
 	}
 	const data = {
 		scenario: $("#form-scenario")[0].value,
@@ -723,6 +724,7 @@ const tooltip_content = {
 	"form-scenario": "Forecast scenario to use.",
 	"form-objective": "Primary objective for the optimization model.",
 	"form-weights": "Preferences for where to transfer patients to if the system runs out of capacity.",
+	"form-transferbudget-total": "Maximum number of patients that can be transferred between all hospitls in a day.",
 	"form-transferbudget": "Maximum number of patients that can be transferred from the given hospital in a day.",
 	"form-surgepreferences": "Preference for where to create additional capacity if it is necessary.",
 	"form-utilization": "Percentage of the total capacity that can be used in practice.",
