@@ -21,4 +21,6 @@ session/*
 target/
 backup/
 
+rawdata/
+
 *.lp
