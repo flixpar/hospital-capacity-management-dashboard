@@ -60,8 +60,7 @@
 
 			<div class="content">
 				<h3 class="title is-3">Overview</h3>
-				<p>
-					New patient transfers are identified as an approach to reduce required surge capacity in healthcare systems. The general patient transfer model from the the paper <a href="https://arxiv.org/pdf/2011.03528.pdf">"Optimal Resource and Demand Redistribution for Healthcare Systems Under Stress from COVID-19"</a> is applied to the recent new patient forecasts for the Johns Hopkins Health System (JHHS) provided by Eili Klein and the surge and maximum capacity from the Applied Physics Lab (APL). An interactive version of the model with the ability to tweak the input parameters is provided at the following link: <a href="https://jhhs.covid-hospital-operations.com/patients">https://jhhs.covid-hospital-operations.com/patients</a>.
+				<p>Patient transfers can help to reduce the required surge capacity and to balance load more evenly in healthcare systems facing stress from COVID-19. We have developed a model to determine optimal transfers so that hospital systems can reduce the surge capacity that they must create or balance load as evenly as possible, while also incorporating operational constraints and costs (for more details see our <a href="https://arxiv.org/pdf/2011.03528.pdf">paper</a>). We have applied this model to the Johns Hopkins Health System using the admissions forcast developed by Eili Klein. This document is a summary report of our current findings, but an interactive tool to modify the parameters to the model and visualize the results can be found on our <a href="https://jhhs.covid-hospital-operations.com/patients">website</a>. <b>Note: this version of the report is preliminary and will be adjusted over the next few days (2020-12-21).</b>
 				</p>
 			</div>
 
@@ -78,7 +77,7 @@
 
 			<div class="content">
 				<h3 class="title is-3">Summary</h3>
-				<p>The optimization model suggests that optimal COVID patient transfers can reduce surge capacity needs in ICUs by up to <span class="fillvalue">SURGEREDUCTION-ICU</span> from <span class="fillvalue">SURGE-NOTRANSFERS-ICU</span> bed days to <span class="fillvalue">SURGE-TRANSFERS-ICU</span> bed days in <span class="fillvalue">TIMEPERIOD</span>. The figures below show the optimal surge timeline for each hospital in the system and the optimal transfer amounts.</p>
+				<p>Our model suggests that optimal COVID patient transfers can reduce surge capacity needs in JHHS ICUs by <span class="fillvalue">SURGEREDUCTION-ICU</span> from <span class="fillvalue">SURGE-NOTRANSFERS-ICU</span> bed days to <span class="fillvalue">SURGE-TRANSFERS-ICU</span> bed days from <span class="fillvalue">TIMEPERIOD</span>. The figures below show the optimal surge timeline for each hospital in the system and the optimal transfer amounts.</p>
 				<div id="section-results-dashboard"></div>
 			</div>
 
