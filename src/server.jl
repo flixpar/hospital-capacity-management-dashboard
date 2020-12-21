@@ -19,7 +19,7 @@ route("/patients") do
 	serve_static_file("html/patients.html")
 end
 
-route("/patients_int") do
+route("/patients-integer") do
 	serve_static_file("html/patients_int.html")
 end
 
