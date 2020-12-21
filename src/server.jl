@@ -23,8 +23,8 @@ route("/patients-integer") do
 	serve_static_file("html/patients_int.html")
 end
 
-route("/generate-report") do
-	serve_static_file("html/generate-report.html")
+route("/report") do
+	serve_static_file("html/report.html")
 end
 
 route("/method") do
