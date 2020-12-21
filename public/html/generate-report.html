@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>COVID-19 Resource Allocation</title>
+
+	<link rel="stylesheet" href="/css/nav.css">
+	<link rel="stylesheet" href="/css/patients.css">
+	<link rel="stylesheet" href="/css/report.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.2/css/bulma.min.css">
+	<link rel="stylesheet" href="https://unpkg.com/balloon-css/balloon.min.css">
+
+	<script async defer data-domain="jhhs.covid-hospital-operations.com" src="https://plausible.io/js/plausible.js"></script>
+	<script src="/js/menu.js"></script>
+</head>
+
+<body>
+
+	<nav class="navbar" role="navigation" aria-label="main navigation">
+		<div class="navbar-brand">
+			<a role="button" class="navbar-burger" data-target="navbar-menu" aria-label="menu" aria-expanded="false">
+				<span aria-hidden="true"></span>
+				<span aria-hidden="true"></span>
+				<span aria-hidden="true"></span>
+			</a>
+		</div>
+
+		<div id="navbar-menu" class="navbar-menu">
+			<div id="navbar-main" class="navbar-start">
+				<a href="/patients" class="navbar-item">Patient Redistribution</a>
+				<a href="/method" class="navbar-item">Methods</a>
+				<a href="/about" class="navbar-item">About Us</a>
+			</div>
+		</div>
+	</nav>
+
+	<section class="section">
+
+		<div class="container">
+			<h1 class="title">JHHS Optimal COVID-19 Patient Redistribution Report</h1>
+		</div>
+
+		<div class="container" id="results-container">
+			<div id="progressbar-area" class="column is-10 is-offset-1">
+				<div class="notification">
+					Updating...
+					<br>
+					Note: This site solves the optimization model in real time on our server, so you may have to wait briefly while it returns an answer.
+				</div>
+				<progress class="progress is-small is-info" max="100"></progress>
+			</div>
+			<div id="error-area" class="column is-10 is-offset-1 is-hidden">
+				<div class="notification is-danger">Error</div>
+			</div>
+		</div>
+
+		<div class="container" id="report-container">
+
+			<div class="content">
+				<h3 class="title is-3">Overview</h3>
+				<p>
+					New patient transfers are identified as an approach to reduce required surge capacity in healthcare systems. The general patient transfer model from the the paper <a href="https://arxiv.org/pdf/2011.03528.pdf">"Optimal Resource and Demand Redistribution for Healthcare Systems Under Stress from COVID-19"</a> is applied to the recent new patient forecasts for the Johns Hopkins Health System (JHHS) provided by Eili Klein and the surge and maximum capacity from the Applied Physics Lab (APL). An interactive version of the model with the ability to tweak the input parameters is provided at the following link: <a href="https://jhhs.covid-hospital-operations.com/patients">https://jhhs.covid-hospital-operations.com/patients</a>.
+				</p>
+			</div>
+
+			<div class="content">
+				<h3 class="title is-3">Parameters</h3>
+				<p>In this analysis we use the forecast from <span class="fillvalue">FORECASTDATE</span> and we consider the <span class="fillvalue">SCENARIO</span> scenario. We also use the following parameters:</p>
+				<ul>
+					<li>Operational occupancy: <span class="fillvalue">OPERATIONALOCCUPANCY</span></li>
+					<li>Maximum ICU transfers per day: <span class="fillvalue">TRANSFERBUDGET-ICU</span> COVID ICU patients</li>
+					<li>Maximum acute transfers per day: <span class="fillvalue">TRANSFERBUDGET-ACUTE</span> COVID acute patients</li>
+					<li>Surge capacity preference: All hospitals equal</li>
+				</ul>
+			</div>
+
+			<div class="content">
+				<h3 class="title is-3">Summary</h3>
+				<p>The optimization model suggests that optimal COVID patient transfers can reduce surge capacity needs in ICUs by up to <span class="fillvalue">SURGEREDUCTION-ICU</span> from <span class="fillvalue">SURGE-NOTRANSFERS-ICU</span> bed days to <span class="fillvalue">SURGE-TRANSFERS-ICU</span> bed days in <span class="fillvalue">TIMEPERIOD</span>. The figures below show the optimal surge timeline for each hospital in the system and the optimal transfer amounts.</p>
+				<div id="section-results-dashboard"></div>
+			</div>
+
+		</div>
+
+	</section>
+
+	<script src="https://code.jquery.com/jquery-3.5.0.min.js"></script>
+
+	<script src="https://unpkg.com/d3@6"></script>
+	<script src="https://unpkg.com/d3-sankey@0.12"></script>
+
+	<script src="/js/activeplot.js"></script>
+	<script src="/js/loadplots.js"></script>
+	<script src="/js/transfers_sankey.js"></script>
+	<script src="/js/transfers.js"></script>
+	<script src="/js/capacity_timeline.js"></script>
+
+	<script src="/js/report.js"></script>
+
+</body>
+
+</html>

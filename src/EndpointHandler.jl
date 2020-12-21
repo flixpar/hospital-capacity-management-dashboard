@@ -1,7 +1,6 @@
 module EndpointHandler
 
 using Genie
-using Genie.Renderer.Json
 
 using Dates
 using JuMP
@@ -13,6 +12,7 @@ using PatientAllocation
 import PatientAllocationResults
 
 export handle_patients_request
+export generate_report
 
 
 function handle_patients_request(
@@ -170,7 +170,53 @@ function handle_patients_request(
 		:total_patients => sum(data.initial) + sum(data.admitted),
 		:config => config,
 	)
-	return json(outcomes)
+	return outcomes
+end
+
+function generate_report()
+	scenario = :moderate
+	objective = :minoverflow
+	constrain_integer = false
+	surge_preferences_dict = Dict{String,Any}("bmc" => "0", "hcgh" => "0", "jhh" => "0", "sh" => "0", "smh" => "0")
+	capacity_util = 0.93
+	uncertainty_level = :default
+	los_param = "default_dist"
+	start_date = today()
+	end_date = today() + Month(1)
+
+	responses = Dict()
+	for patient_type in [:icu, :ward]
+		tfr_budget = (patient_type == :icu) ? "15" : "25"
+		transfer_budget_dict = Dict{String,Any}(h => tfr_budget for h in ["bmc", "hcgh", "jhh", "sh", "smh", "total"])
+		r = handle_patients_request(
+			scenario,
+			patient_type,
+			objective,
+			constrain_integer,
+			transfer_budget_dict,
+			surge_preferences_dict,
+			capacity_util,
+			uncertainty_level,
+			los_param,
+			start_date,
+			end_date,
+		)
+		r[:transfer_budget] = tfr_budget
+		responses[patient_type] = r
+	end
+
+	responses[:meta] = merge((
+		forecast_date = "2020-12-05",
+	), (;
+		scenario,
+		objective,
+		constrain_integer,
+		capacity_util,
+		start_date,
+		end_date,
+	))
+
+	return responses
 end
 
 end;

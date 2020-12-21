@@ -1,6 +1,7 @@
 using Genie
 using Genie.Router
 using Genie.Requests
+using Genie.Renderer.Json
 
 using Dates
 
@@ -20,6 +21,10 @@ end
 
 route("/patients_int") do
 	serve_static_file("html/patients_int.html")
+end
+
+route("/generate-report") do
+	serve_static_file("html/generate-report.html")
 end
 
 route("/method") do
@@ -48,13 +53,19 @@ route("/api/patients", method=POST) do
 	start_date = Date(input["start_date"])
 	end_date   = Date(input["end_date"])
 
-	handle_patients_request(
+	response = handle_patients_request(
 		scenario, patient_type,
 		objective, constrain_integer,
 		transfer_budget, surge_preferences,
 		capacity_util, uncertainty_level, los,
 		start_date, end_date,
 	)
+	return json(response)
+end
+
+route("/api/report", method=GET) do
+	response = generate_report()
+	return json(response)
 end
 
 

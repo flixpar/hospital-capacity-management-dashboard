@@ -1,0 +1,7 @@
+.fillvalue {
+	color: red;
+}
+
+.fillvalue.filled {
+	color: blue;
+}
