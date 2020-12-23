@@ -301,7 +301,7 @@ function computeCapacityTimelineData(response, locIdx, withTransfers=true) {
 	for (let t = 0; t < T; t++) {
 		const activeToday = withTransfers ? response.active[locIdx][t] : response.active_null[locIdx][t];
 		let currentLevel = response.capacity[locIdx].findIndex(c => (c+0.9) >= activeToday);
-		currentLevel = response.capacity[locIdx].lastIndexOf(response.capacity[locIdx][currentLevel]);
+		// currentLevel = response.capacity[locIdx].lastIndexOf(response.capacity[locIdx][currentLevel]);
 		if (currentLevel != prevLevel && t != 0) {
 			timelineData.push({
 				startDate: dates[startDate],
