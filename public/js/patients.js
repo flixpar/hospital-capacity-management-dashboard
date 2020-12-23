@@ -13,17 +13,6 @@ function handleResponse(response, status, xhr) {
 
 	recentResponse = response;
 
-	const summary_data = response.summary;
-	const full_results = response.full_results;
-	const sent_matrix  = response.sent_matrix;
-	const net_sent     = response.net_sent;
-	const sent         = response.sent;
-	const beds         = response.beds;
-	const capacity     = response.capacity;
-	const active_patients = response.active;
-	const active_patients_nosent = response.active_null;
-	const config       = response.config;
-
 	makeSections();
 
 	let section = getSection("casestudy-info");
@@ -41,14 +30,14 @@ function handleResponse(response, status, xhr) {
 
 	createAdmittedPlot(response);
 	createDischargedPlot(response);
-	createActivePlot(active_patients, active_patients_nosent, capacity, config);
+	createActivePlot(response);
 	createOverallLoadPlot(response);
 	createLoadPlots(response);
 	createTransfersSankey(response);
-	createRidgePlot(net_sent, config.node_names, "patients");
+	createRidgePlot(response.net_sent, response.config.node_names, "patients");
 
-	setupTable(summary_data, is_wide=true, table_id="summary-table", title="Summary Statistics");
-	setupTable(full_results, is_wide=true, table_id="full-table",    title="Full Results");
+	setupTable(response.summary, is_wide=true, table_id="summary-table", title="Summary Statistics");
+	setupTable(response.full_results, is_wide=true, table_id="full-table",    title="Full Results");
 	setupTableFilter("full-table");
 
 	setupDownloads(response);

@@ -17,7 +17,12 @@ const bedsLineWidth = 8;
 const addPoints = true;
 
 
-function createActivePlot(active, active_null, capacity, config, add_description=true) {
+function createActivePlot(response, add_description=true) {
+	const capacity = response.capacity;
+	const active = response.active;
+	const active_null = response.active_null;
+	const config = response.config;
+
 	const N = capacity.length;
 	const T = config.dates.length;
 	const C = capacity[0].length;
