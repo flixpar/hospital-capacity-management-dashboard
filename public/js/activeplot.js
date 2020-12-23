@@ -9,7 +9,7 @@ const titleFontSize = "22px";
 const active_color = "#17AC7B";
 const active_null_color = "#15ACF8";
 
-const capacityColors = ["gold", "darkorange", "red", "black"];
+const capacityColors = ["gold", "darkorange", "red", "purple", "black"];
 
 const lineWidth = 4;
 const bedsLineWidth = 8;
@@ -226,12 +226,7 @@ function createActivePlot(active, active_null, capacity, config, add_description
 	const patientsColorscaleElem = makeHorizontalColorScale(activeLabels, activeColors);
 	section.appendChild(patientsColorscaleElem);
 
-	const capacityNames = [
-		"Baseline Capacity",
-		"Ramp-Up Capacity",
-		"Surge Capacity",
-		"Max Capacity",
-	];
+	const capacityNames = response.config.capacity_names;
 	const capacityColorscaleElem = makeHorizontalColorScale(capacityNames, capacityColors);
 	section.appendChild(capacityColorscaleElem);
 

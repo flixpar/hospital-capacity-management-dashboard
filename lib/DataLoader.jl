@@ -54,10 +54,9 @@ function load_jhhs(
 		end
 	end
 
-	default_capacity_level = 4
+	default_capacity_level = size(casesdata.capacity,2)
 	beds = casesdata.capacity[:,default_capacity_level]
 	capacity = casesdata.capacity
-	capacity_names = ["Baseline Capacity", "Ramp-Up Capacity", "Surge Capacity", "Max Capacity"]
 
 	adj = (data.dist_matrix .<= 1)
 	node_locations = Dict(h => data.locations_latlong[h] for h in hospitals)
@@ -75,7 +74,7 @@ function load_jhhs(
 		node_names = hospitals,
 		node_names_abbrev = hospitals_abbrev,
 		extent = extent,
-		capacity_names = capacity_names,
+		capacity_names = data.capacity_names,
 	)
 
 	if (patient_type == :ward) && ENABLE_BCC

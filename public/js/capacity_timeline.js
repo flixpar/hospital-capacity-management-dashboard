@@ -10,6 +10,7 @@ const capacityTimelineColorscale = {
 	1: "gold",
 	2: "darkorange",
 	3: "red",
+	4: "purple",
 };
 
 

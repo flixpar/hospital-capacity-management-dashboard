@@ -14,7 +14,7 @@ function createOverallLoadPlot(rawdata, add_description=true) {
 		section.appendChild(description);
 	}
 
-	const overallData = extractOverallLoadData(rawdata, 3);
+	const overallData = extractOverallLoadData(rawdata);
 	const overallLoadPlot = makeOverallLoadPlot(overallData);
 	overallLoadPlot.id = "overallloadplot";
 
@@ -41,7 +41,7 @@ function createLoadPlots(rawdata, add_description=true) {
 	createCapacityOption("loadplots", rawdata);
 }
 
-function makeLoadPlots(rawdata, capacityLevel=3) {
+function makeLoadPlots(rawdata, capacityLevel=-1) {
 	const loadData = extractLoadData(rawdata, capacityLevel);
 
 	const betweenMargin = 50;
@@ -417,12 +417,16 @@ function makeLoadLabels(svg, yScale, maxY) {
 	return svg;
 }
 
-function extractLoadData(rawdata, capacityLevel=3) {
+function extractLoadData(rawdata, capacityLevel=-1) {
 	const N = rawdata.capacity.length;
 	const T = rawdata.config.dates.length;
 
 	let load_data = [];
 	let load_null_data = [];
+
+	if (capacityLevel == -1) {
+		capacityLevel = rawdata.capacity[0].length - 1;
+	}
 
 	for (let i = 0; i < N; i++) {
 		load_data[i] = [];
@@ -450,9 +454,13 @@ function extractLoadData(rawdata, capacityLevel=3) {
 	};
 }
 
-function extractOverallLoadData(rawdata, capacityLevel=3) {
+function extractOverallLoadData(rawdata, capacityLevel=-1) {
 	const N = rawdata.beds.length;
 	const T = rawdata.config.dates.length;
+
+	if (capacityLevel == -1) {
+		capacityLevel = rawdata.capacity[0].length - 1;
+	}
 
 	let overall_load = [];
 	const totBeds = d3.sum(rawdata.capacity, x => x[capacityLevel]);
@@ -472,12 +480,12 @@ function createCapacityOption(plotName, rawdata) {
 	let capacitySelect = document.createElement("select");
 	capacitySelect.id = plotName + "-capacitylevel";
 
-	const capacityNames = ["Baseline Capacity", "Ramp-Up Capacity", "Surge Capacity", "Max Capacity"];
+	const capacityNames = rawdata.config.capacity_names;
 	for (let c = 0; c < capacityNames.length; c++) {
 		let opt = document.createElement("option");
 		opt.text = capacityNames[c];
 		opt.value = c;
-		if (c == 3) {
+		if (c == capacityNames.length-1) {
 			opt.selected = true;
 		}
 		capacitySelect.appendChild(opt);

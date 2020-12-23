@@ -12,7 +12,7 @@ const dashboardTitleFontSize = 10;
 const dashboardLineWidth = 2;
 const dashboardCapacityLineWidth = 1;
 
-const dashboardCapacityColors = ["gold", "darkorange", "red", "black"];
+const dashboardCapacityColors = ["gold", "darkorange", "red", "purple", "black"];
 const dashboardLineColors = {
 	"BMC":  "#006C67",
 	"HCGH": "#B9314F",
