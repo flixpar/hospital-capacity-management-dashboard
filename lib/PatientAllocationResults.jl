@@ -4,6 +4,7 @@ using DataFrames
 using LinearAlgebra
 using Dates
 using Distributions
+using Serialization
 
 
 function results_all(
@@ -208,6 +209,56 @@ function results_active_patients(
 	end
 
 	return active, active_null
+end
+
+function admission_sims(start_date, end_date, scenario, bedtype)
+	data = deserialize("data/data_jhhs.jlser")
+
+	casesdata = data.casesdata[(scenario, bedtype)]
+	los_dist  = casesdata.los_dist
+
+	function compute_active(initial, admitted)
+		T = length(admitted)
+		discharged = initial .* (pdf.(los_dist, 0:T-1))
+		L = 1.0 .- cdf.(los_dist, 0:T)
+		active = [
+			(
+				initial
+				- sum(discharged[1:t])
+				+ sum(L[t-t₁+1] * admitted[t₁] for t₁ in 1:t)
+			) for t in 1:T
+		]
+		return active
+	end
+
+	start_date_t = (start_date - data.start_date).value + 1
+	T = (end_date - start_date).value + 1
+
+	allowed_admissions_data = []
+	for hospital in data.location_names, capacitylevel in data.capacity_names
+		locIdx = findfirst(data.location_names .== hospital)
+		capIdx = findfirst(data.capacity_names .== capacitylevel)
+
+		initial  = casesdata.active[locIdx, start_date_t-1]
+		capacity = casesdata.capacity[locIdx, capIdx]
+
+		allowed_admit = 0
+		while true
+			admitted_sim = fill(allowed_admit, T)
+			active_sim = compute_active(initial, admitted_sim)
+			if maximum(active_sim) > capacity
+				allowed_admit -= 1
+				break
+			else
+				allowed_admit += 1
+			end
+		end
+
+		push!(allowed_admissions_data, (;hospital, bedtype, capacitylevel, allowed_admit_perday_mean=allowed_admit))
+	end
+
+	allowed_admissions = DataFrame(allowed_admissions_data)
+	return allowed_admissions
 end
 
 end

@@ -205,16 +205,21 @@ function generate_report()
 		responses[patient_type] = r
 	end
 
-	responses[:meta] = merge((
+	for patient_type in [:icu, :ward]
+		sims = PatientAllocationResults.admission_sims(start_date, end_date, scenario, patient_type)
+		sims_wide = unstack(sims, :capacitylevel, :hospital, :allowed_admit_perday_mean)
+		responses[patient_type][:admission_sims] = sims_wide
+	end
+
+	responses[:meta] = (;
 		forecast_date = "2020-12-05",
-	), (;
 		scenario,
 		objective,
 		constrain_integer,
 		capacity_util,
 		start_date,
 		end_date,
-	))
+	)
 
 	return responses
 end
