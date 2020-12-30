@@ -91,7 +91,7 @@ function createAdmissionSimsTable(response, sectionName) {
 		nameEntry.textContent = h;
 		row.appendChild(nameEntry);
 
-		const currentLevel = response.admission_sims.current_admissions[0][i].toFixed(0);
+		const currentLevel = response.admission_sims.current_admissions[i].toFixed(0);
 
 		for (v of tableData[h]) {
 			let td = document.createElement("td");
