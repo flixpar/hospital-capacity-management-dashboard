@@ -256,9 +256,16 @@ function admission_sims(start_date, end_date, scenario, bedtype)
 
 		push!(allowed_admissions_data, (;hospital, bedtype, capacitylevel, allowed_admit_perday_mean=allowed_admit))
 	end
-
 	allowed_admissions = DataFrame(allowed_admissions_data)
-	return allowed_admissions
+	allowed_admissions_wide = unstack(allowed_admissions, :capacitylevel, :hospital, :allowed_admit_perday_mean)
+
+	recent_admissions = casesdata.admitted[:,(start_date_t-7):(start_date_t-1)]
+	current_admissions = sum(recent_admissions, dims=2) ./ 7
+
+	return (
+		table = allowed_admissions_wide,
+		current_admissions = current_admissions[:],
+	)
 end
 
 end

@@ -56,7 +56,7 @@ function computeValue(response, metricName) {
 }
 
 function createAdmissionSimsTable(response, sectionName) {
-	const tableData = response.admission_sims;
+	const tableData = response.admission_sims.table;
 
 	let table = document.createElement("table");
 	table.className = "table is-hoverable";
@@ -79,7 +79,11 @@ function createAdmissionSimsTable(response, sectionName) {
 		tableHeaderRow.appendChild(th);
 	}
 
-	for (h of response.config.node_names) {
+	let elem = document.createElement("th");
+	elem.textContent = "Current";
+	tableHeaderRow.appendChild(elem);
+
+	response.config.node_names.forEach((h,i) => {
 		let row = document.createElement("tr");
 		tableBody.appendChild(row);
 
@@ -87,12 +91,20 @@ function createAdmissionSimsTable(response, sectionName) {
 		nameEntry.textContent = h;
 		row.appendChild(nameEntry);
 
+		const currentLevel = response.admission_sims.current_admissions[0][i].toFixed(0);
+
 		for (v of tableData[h]) {
 			let td = document.createElement("td");
 			td.textContent = (v == -1) ? 0 : v;
+			td.style.color = (v < currentLevel) ? "red" : "green";
 			row.appendChild(td);
 		}
-	}
+
+		let elem = document.createElement("td");
+		elem.textContent = currentLevel;
+		elem.style.fontWeight = "bold";
+		row.appendChild(elem);
+	});
 }
 
 function ajaxErrorHandler() {

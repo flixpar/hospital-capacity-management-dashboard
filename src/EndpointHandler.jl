@@ -207,8 +207,7 @@ function generate_report()
 
 	for patient_type in [:icu, :ward]
 		sims = PatientAllocationResults.admission_sims(start_date, end_date, scenario, patient_type)
-		sims_wide = unstack(sims, :capacitylevel, :hospital, :allowed_admit_perday_mean)
-		responses[patient_type][:admission_sims] = sims_wide
+		responses[patient_type][:admission_sims] = sims
 	end
 
 	responses[:meta] = (;
