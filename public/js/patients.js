@@ -16,7 +16,7 @@ import {setupTable, setupTableFilter, setupTableDownloads} from "./tables.js";
 import {generateAllFigureDownloadButtons} from "./figuredl.js";
 
 let container = document.getElementById("result-area");
-let recentResponse = null;
+export let recentResponse = null;
 
 
 function handleResponse(response, status, xhr) {

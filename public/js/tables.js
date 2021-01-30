@@ -1,10 +1,12 @@
 export {setupTable, setupTableFilter, setupTableDownloads};
-import {toTitlecase, getSection, createInfo} from "./common.js";
+import {getSection, createInfo, toTitlecase} from "./common.js";
+import {recentResponse} from "./patients.js";
 
 function setupTable(table_data, is_wide=false, table_id=null, title=null, replace=false) {
 
 	const cols = Object.keys(table_data);
-	const colNames = cols.map(c => toTitlecase(c.replace(/_/g, " ")));
+	let colNames = cols.map(c => toTitlecase(c.replace(/_/g, " ")));
+	colNames = colNames.map(c => (columnConvert[c] == null) ? c : columnConvert[c]);
 
 	let table = document.createElement("table");
 	table.id = table_id;
@@ -32,7 +34,7 @@ function setupTable(table_data, is_wide=false, table_id=null, title=null, replac
 			if (typeof val == "string") {
 				el.innerHTML = val;
 			} else if (val == null) {
-				console.log(i, colName, "NULL!!");
+				// console.log(i, colName, "NULL!!");
 				el.innerHTML = "NaN";
 			} else {
 				el.innerHTML = val.toFixed(3);
@@ -161,7 +163,7 @@ function updateFilterBy() {
 		let options = recentResponse.config.node_names;
 		createOptions(options, filterValueSelect);
 	} else if (filterby === "date") {
-		let allDates = recentResponse.full_results.columns[1];
+		let allDates = recentResponse.full_results.date;
 		let uniqueDates = allDates.filter(function(item, pos){
 			return allDates.indexOf(item) == pos; 
 		});
@@ -195,22 +197,14 @@ function createOptions(opts, select) {
 function filterFullTable() {
 	const filterby = document.getElementById("filter-by-select").value;
 	if (filterby === "none") {
-		setupTable(recentResponse.full_results, is_wide=true, table_id="full-table", title="Full Results", replace=true);
+		setupTable(recentResponse.full_results, true, "full-table", "Full Results", true);
 		return;
 	};
 
 	let tableData = JSON.parse(JSON.stringify(recentResponse.full_results));
-	let colIdx = -1;
-	if (filterby === "location") {
-		colIdx = tableData.colindex.lookup.location - 1;
-	} else {
-		colIdx = tableData.colindex.lookup.day - 1;
-	}
 
 	const filterValue = document.getElementById("filter-value-select").value;
-
-	let values = tableData.columns[colIdx];
-	console.log(values);
+	let values = tableData[filterby];
 	let filterInd = [];
 	for (let i = 0; i < values.length; i++) {
 		if (values[i] == filterValue) {
@@ -218,11 +212,11 @@ function filterFullTable() {
 		}
 	}
 
-	for (const i in tableData.columns) {
-		tableData.columns[i] = tableData.columns[i].filter((_,j) => filterInd.indexOf(j) >= 0);
+	for (const col of Object.keys(tableData)) {
+		tableData[col] = tableData[col].filter((_,j) => filterInd.indexOf(j) >= 0);
 	}
 
-	setupTable(tableData, is_wide=true, table_id="full-table", title="Full Results", replace=true);
+	setupTable(tableData, true, "full-table", "Full Results", true);
 }
 
 function setupTableDownloads(rawdata) {
@@ -289,7 +283,7 @@ function downloadTableAsCSV(table, fn) {
 	const nrows = table[cols[0]].length;
 	const data = d3.range(nrows).map(i => {
 		let row = {};
-		for (const col of cols) {
+		for (col of cols) {
 			row[col] = table[col][i];
 		}
 		return row;
@@ -306,16 +300,20 @@ function downloadTableAsCSV(table, fn) {
 }
 
 const column_descriptions = {
-	"Total Sent": "Total number of patients that should be sent to another state according to our model.",
-	"Total Received": "Total number of patients that would be received from another state under our model.",
-	"Overflow": "Number of patient-days where a patient does not have a hospital bed available to them.",
-	"Capacity": "Number of hospital beds in the state.",
-	"New Patients": "Forecasted number of people who need to be admitted to the hospital on a given day in a given state.",
-	"Sent": "Number of patients that should be sent to another state on a given day according to our model.",
-	"Received": "Number of patients that would be received from another state on a given day under our model.",
-	"Active Patients": "Expected number of patients in a given state on a given day after re-distribution.",
-	"Average Load" : "Percentage of beds dedicated to COVID patients that are filled, on average.",
-	"Load" : "Percentage of beds dedicated to COVID patients that are filled.",
+	"Total Sent": "Total number of patients that should be sent to another hospital according to our model.",
+	"Total Received": "Total number of patients that would be received from another hospital under our model.",
+	"Overflow (Optimal Transfers)": "Number of patient-days where a patient does not have a hospital bed available to them, assuming optimal patient transfers.",
+	"Overflow (Without Optimal Transfers)": "Number of patient-days where a patient does not have a hospital bed available to them, according to the data/forecast.",
+	"Capacity": "Number of COVID-dedicated beds in the hospital.",
+	"New Patients": "Forecasted number of people who need to be admitted to the hospital on a given day.",
+	"Optimal Transfers (Sent)": "Number of patients that should be sent to another hospital on a given day according to our model.",
+	"Optimal Transfers (Received)": "Number of patients that would be received from another hospital on a given day under our model.",
+	"Active Patients (Optimal Transfers)": "Expected number of patients in a given hospital on a given day, assuming optimal transfers.",
+	"Active Patients (Without Optimal Transfers)": "Expected number of patients in a given hospital on a given day, according to the data/forecasts.",
+	"Occupancy (Optimal Transfers)" : "Percentage of beds dedicated to COVID patients that are filled, assuming optimal transfers.",
+	"Occupancy (Without Optimal Transfers)" : "Percentage of beds dedicated to COVID patients that are filled, according to the data/forecasts.",
+	"Average Occupancy (Optimal Transfers)" : "Percentage of beds dedicated to COVID patients that are filled, on average, assuming optimal transfers.",
+	"Average Occupancy (Without Optimal Transfers)" : "Percentage of beds dedicated to COVID patients that are filled, on average, according to the data/forecasts.",
 	"Date": "Date in YYYY-MM-DD format.",
 };
 function addColumnTooltips(tableId) {
@@ -326,3 +324,16 @@ function addColumnTooltips(tableId) {
 		}
 	});
 }
+
+const columnConvert = {
+	"Active Patients": "Active Patients (Optimal Transfers)",
+	"Overflow": "Overflow (Optimal Transfers)",
+	"Load": "Occupancy (Optimal Transfers)",
+	"Overall Load": "Average Occupancy (Optimal Transfers)",
+	"Active Patients Nosent": "Active Patients (Without Optimal Transfers)",
+	"Overflow Nosent": "Overflow (Without Optimal Transfers)",
+	"Load Nosent": "Occupancy (Without Optimal Transfers)",
+	"Overall Load Nosent": "Average Occupancy (Without Optimal Transfers)",
+	"Sent": "Optimal Transfers (Sent)",
+	"Received": "Optimal Transfers (Received)",
+};
