@@ -211,7 +211,7 @@ function generate_report()
 	end
 
 	responses[:meta] = (;
-		forecast_date = "2020-12-05",
+		forecast_date = "2021-01-21",
 		scenario,
 		objective,
 		constrain_integer,
