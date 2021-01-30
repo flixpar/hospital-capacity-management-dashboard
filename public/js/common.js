@@ -18,8 +18,11 @@ function createInfo(parentElement, content) {
 	el.src = "img/info.svg";
 	el.className = "info-icon";
 	el.setAttribute("data-tippy-content", content);
-	parentElement.appendChild(el);
 	tippy(el, {delay: [null, 250]});
+	if (parentElement != null) {
+		parentElement.appendChild(el);
+	}
+	return el;
 }
 
 function getDateIntervals(dates) {

@@ -54,6 +54,7 @@ function handleResponse(response, status, xhr) {
 	setupTableFilter("full-table");
 	setupTableDownloads(response);
 
+	updateText(response);
 	generateAllFigureDownloadButtons();
 
 	console.log("Done.");
@@ -259,3 +260,45 @@ $("#form label").each((i, el) => {
 		common.createInfo(el, tooltip_content[k]);
 	}
 });
+
+function updateText(response) {
+	// enableHiddenTextButtons();
+
+	const isMobile = (window.innerWidth < 600);
+
+	let mapTitle = `COVID-19 Capacity, Occupancy, and Optimal Transfers in JHHS`;
+	if (isMobile) {mapTitle = `COVID-19 Occupancy, and Optimal Transfers`;}
+	for (let map of document.querySelectorAll(".hospitalsmap")) {
+		const metric = map.id.substring(13);
+		if (metric.indexOf("_both") > 0) {
+			map.querySelector(".map-title").textContent = mapTitle;
+		} else {
+			map.querySelector(".map-subtitle").textContent = mapTitle;
+		}
+	}
+
+	for (let elem of document.querySelectorAll(".region-text")) {
+		elem.textContent = "JHHS";
+	}
+
+	for (let elem of document.querySelectorAll(".fill-value")) {
+		const contentid = elem.dataset.contentid;
+		if (contentid == "start_date") {
+			elem.textContent = response.config.start_date;
+		} else if (contentid == "end_date") {
+			elem.textContent = response.config.end_date;
+		}
+	}
+
+	for (let elem of document.querySelectorAll(".abbrev-text")) {
+		const fulltext = elem.dataset.fulltext;
+		elem.setAttribute("data-tippy-content", fulltext);
+		tippy(elem, {delay: [null, 250]});
+	}
+
+	for (let elem of document.querySelectorAll(".info-text")) {
+		const text = elem.textContent;
+		const info = createInfo(null, text);
+		elem.replaceWith(info);
+	}
+}
