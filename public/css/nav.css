@@ -1,6 +1,7 @@
 .navbar {
 	border-bottom: 1px solid lightgray;
 	margin-bottom: 10px;
+	background-color: #f9f9f9 !important;
 }
 
 #navbar-brand-img {
@@ -9,9 +10,37 @@
 	margin-right: 5px;
 }
 
-@media screen and (min-width: 1024px) {
-	#navbar-main {
-		justify-content: center;
-		width: 100%;
+.navbar-brand > .navbar-item {
+	font-size: 1.5em;
+	font-weight: bold;
+	margin-right: 10px;
+}
+
+#navbar-menu {
+	text-align: center;
+	justify-content: center;
+	flex-direction: column;
+	width: 100%;
+}
+
+#navbar-title > a {
+	color: #4a4a4a;
+	font-weight: bold;
+}
+
+.navbar-dropdown {
+	padding-top: 0px;
+}
+
+@media (min-width: 1024px) {
+	#navbar-menu {
+		display: flex;
+	}
+}
+
+@media (max-width: 1023px) {
+	.navbar-brand > .navbar-item {
+		max-width: calc(100vw - 4em);
+		margin-right: 0;
 	}
 }
