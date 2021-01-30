@@ -13,6 +13,7 @@ const capacityTimelineColorscale = {
 	4: "purple",
 };
 
+import {makeLegend} from "./common.js";
 import {capacityTimelineDescription} from "./figure_text.js";
 
 export {createCapacityTimeline};
@@ -209,9 +210,6 @@ function makeCapacityTimelineAxis(svg, response, subplotSize) {
 
 function makeCapacityTimelineLegend(svg, response) {
 
-	let legendHeight;
-	let legendG = svg.append("g").attr("transform", `translate(0,${capacityTimelinePlotSize.height})`);
-
 	let legendLabels = [];
 	let legendColors = [];
 
@@ -226,79 +224,9 @@ function makeCapacityTimelineLegend(svg, response) {
 		}
 	}
 
-	legendG, legendHeight = makeMultiRowLegend(legendG, legendLabels, legendColors, capacityTimelinePlotSize.width);
-
-	svg.attr("viewBox", [0, 0, capacityTimelinePlotSize.width, capacityTimelinePlotSize.height+legendHeight]);
+	svg = makeLegend(svg, legendLabels, legendColors);
 
 	return svg;
-}
-
-function makeMultiRowLegend(svg, labels, colors, totalWidth) {
-	const N = labels.length;
-
-	const maxNameLength = d3.max(labels, x => x.length);
-	const rowHeight = 9;
-	const colWidth = (maxNameLength * (rowHeight-2) * 0.5) + rowHeight + 5 + 10;
-
-	const maxCols = Math.floor(totalWidth / colWidth);
-	const nRows = Math.ceil(N / maxCols);
-	const nCols = Math.min(maxCols, N);
-
-	const actualWidth = colWidth * nCols;
-	const marginLeft  = (totalWidth - actualWidth) / 2;
-	const marginTop   = 10;
-
-	const totalHeight = (nRows * rowHeight) + marginTop + 5;
-
-	const debug = false;
-
-	for (let i = 0; i < nRows; i++) {
-		for (let j = 0; j < nCols; j++) {
-			const k = (i*nCols) + j;
-			if (k >= N) continue;
-
-			svg.append("rect")
-				.attr("x", marginLeft + ( colWidth * j))
-				.attr("y", marginTop  + (rowHeight * i))
-				.attr("width", rowHeight)
-				.attr("height", rowHeight)
-				.attr("rx", 3)
-				.attr("ry", 3)
-				.attr("fill", colors[k])
-				.attr("stroke", "none");
-
-			svg.append("text")
-				.attr("x", marginLeft + ( colWidth * j) + rowHeight + 4)
-				.attr("y", marginTop  + (rowHeight * (i+0.5)))
-				.attr("text-anchor", "start")
-				.attr("alignment-baseline", "central")
-				.style("font-family", "sans-serif")
-				.style("font-size", rowHeight-2)
-				.text(labels[k]);
-
-			if (debug) {
-				svg.append("rect")
-					.attr("x", marginLeft + ( colWidth * j))
-					.attr("y", marginTop  + (rowHeight * i))
-					.attr("width", colWidth)
-					.attr("height", rowHeight)
-					.attr("fill", "none")
-					.attr("stroke", "gray");
-			}
-		}
-	}
-
-	if (debug) {
-		svg.append("rect")
-			.attr("x", marginLeft)
-			.attr("y", 0)
-			.attr("width", actualWidth)
-			.attr("height", totalHeight)
-			.attr("fill", "none")
-			.attr("stroke", "blue");
-	}
-
-	return svg, totalHeight;
 }
 
 function computeCapacityTimelineData(response, locIdx, withTransfers=true) {

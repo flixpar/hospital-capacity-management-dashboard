@@ -4,6 +4,7 @@ export {
 	createInfo,
 	getDateIntervals,
 	makeHorizontalColorScale,
+	makeLegend,
 };
 
 const toTitlecase = s => s.split(' ').map(w => w[0].toUpperCase() + w.substr(1)).join(' ');
@@ -91,4 +92,85 @@ function makeHorizontalColorScale(labels, colors) {
 	colorscaleElem.appendChild(colorscale);
 
 	return colorscaleElem;
+}
+
+function makeLegend(svg, labels, colors, singleRow=true, position="bottom", debug=false) {
+	let legendG = svg.append("g");
+
+	const N = labels.length;
+
+	const maxNameLength = d3.max(labels, x => x.length);
+	const rowHeight = 9;
+	const colWidth = (maxNameLength * (rowHeight-2) * 0.5) + rowHeight + 5 + 10;
+
+	let viewBox = svg.attr("viewBox").split(",").map(z => parseFloat(z));
+	const totalWidth = viewBox[2];
+
+	const maxCols = Math.floor(totalWidth / colWidth);
+	const nRows = singleRow ? 1 : Math.ceil(N / maxCols);
+	const nCols = singleRow ? N : Math.min(maxCols, N);
+
+	const actualWidth = colWidth * nCols;
+	const marginLeft  = (totalWidth - actualWidth) / 2;
+	const marginTop   = 10;
+
+	const totalHeight = (nRows * rowHeight) + marginTop + 5;
+
+	for (let i = 0; i < nRows; i++) {
+		for (let j = 0; j < nCols; j++) {
+			const k = (i*nCols) + j;
+			if (k >= N) continue;
+
+			legendG.append("rect")
+				.attr("x", marginLeft + ( colWidth * j))
+				.attr("y", marginTop  + (rowHeight * i))
+				.attr("width", rowHeight)
+				.attr("height", rowHeight)
+				.attr("rx", 3)
+				.attr("ry", 3)
+				.attr("fill", colors[k])
+				.attr("stroke", "none");
+
+				legendG.append("text")
+				.attr("x", marginLeft + ( colWidth * j) + rowHeight + 4)
+				.attr("y", marginTop  + (rowHeight * (i+0.5)))
+				.attr("text-anchor", "start")
+				.attr("alignment-baseline", "central")
+				.style("font-family", "sans-serif")
+				.style("font-size", rowHeight-2)
+				.text(labels[k]);
+
+			if (debug) {
+				legendG.append("rect")
+					.attr("x", marginLeft + ( colWidth * j))
+					.attr("y", marginTop  + (rowHeight * i))
+					.attr("width", colWidth)
+					.attr("height", rowHeight)
+					.attr("fill", "none")
+					.attr("stroke", "gray");
+			}
+		}
+	}
+
+	if (debug) {
+		legendG.append("rect")
+			.attr("x", marginLeft)
+			.attr("y", 0)
+			.attr("width", actualWidth)
+			.attr("height", totalHeight)
+			.attr("fill", "none")
+			.attr("stroke", "blue");
+	}
+
+	const offsetY = (position == "bottom") ? viewBox[3] : -totalHeight;
+	legendG.attr("transform", `translate(0, ${offsetY})`);
+
+	if (position == "top") {
+		viewBox[1] -= totalHeight;
+	}
+
+	viewBox[3] += totalHeight;
+	svg.attr("viewBox", viewBox);
+
+	return svg;
 }

@@ -25,7 +25,7 @@ const dashboardLineColors = {
 	"default": "blue",
 };
 
-import {makeHorizontalColorScale} from "./common.js";
+import {makeLegend} from "./common.js";
 import {dashboardDescription} from "./figure_text.js";
 
 export {createJHHSDashboard};
@@ -42,10 +42,6 @@ function createJHHSDashboard(response, add_description=true) {
 	const fig = makeJHHSDashboard(response);
 	section.appendChild(fig);
 
-	const capacityNames = response.config.capacity_names;
-	const capacityColorscaleElem = makeHorizontalColorScale(capacityNames, dashboardCapacityColors);
-	capacityColorscaleElem.style.marginTop = "20px";
-	section.appendChild(capacityColorscaleElem);
 	fig.setAttribute("figure-name", "capacity-dashboard");
 	fig.classList.add("figure");
 
@@ -97,6 +93,8 @@ function makeJHHSDashboard(response) {
 		let g = svg.append("g").attr("transform", `translate(${dashboardMargin.left + (i*plotSize.width)}, ${dashboardMargin.top})`);
 		g.append(() => tooltips[i].node);
 	}
+
+	makeLegend(svg, response.config.capacity_names, dashboardCapacityColors);
 
 	return svg.node();
 }

@@ -10,7 +10,7 @@ const tfrBarColors = {
 	"default": "blue",
 };
 
-import {makeHorizontalColorScale} from "./common.js";
+import {makeLegend} from "./common.js";
 import {transfersDescription} from "./figure_text.js";
 
 export {createTransfersBreakdownPlot};
@@ -27,18 +27,6 @@ function createTransfersBreakdownPlot(response, add_description=true) {
 	const fig = makeTransfersBreakdownPlot(response);
 	section.appendChild(fig);
 
-	const hospNames = response.config.node_names;
-	const hospColors = response.config.node_names.map(h => tfrBarColors[h]);
-	const hospColorscaleElem = makeHorizontalColorScale(hospNames, hospColors);
-	hospColorscaleElem.style.marginTop = "20px";
-	section.appendChild(hospColorscaleElem);
-
-	let colorscaleTitleElem = document.createElement("p");
-	colorscaleTitleElem.innerHTML = "Destination Hospital";
-	colorscaleTitleElem.style.fontFamily = "Helvetica";
-	colorscaleTitleElem.style.fontSize = "14px";
-	colorscaleTitleElem.style.textAlign = "center";
-	hospColorscaleElem.insertBefore(colorscaleTitleElem, hospColorscaleElem.childNodes[0]);
 	fig.setAttribute("figure-name", "transfers-breakdown");
 	fig.classList.add("figure");
 
@@ -69,6 +57,10 @@ function makeTransfersBreakdownPlot(response) {
 		.attr("font-family", "monospace")
 		.attr("font-size", 10)
 		.text("Origin Hospital");
+
+	const hospNames = response.config.node_names;
+	const hospColors = response.config.node_names.map(h => tfrBarColors[h]);
+	makeLegend(svg, hospNames, hospColors);
 
 	return svg.node();
 }
