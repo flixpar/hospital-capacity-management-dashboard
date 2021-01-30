@@ -1,7 +1,7 @@
 const dischargedMargin = {left: 45, right: 5, top: 5, bottom: 5};
 
 const dischargedContainerWidth = 600;
-const dischargedSize = {"width": dischargedContainerWidth, "height": 0.5*dischargedContainerWidth};
+const dischargedSize = {"width": dischargedContainerWidth, "height": 0.4*dischargedContainerWidth};
 
 const dischargedAxisFont = "monospace";
 const dischargedDefaultFont = "Helvetica";

@@ -1,7 +1,7 @@
 const dashboardMargin = {left: 40, right: 5, top: 5, bottom: 5};
 
 const dashboardContainerWidth = 600;
-const dashboardSize = {"width": dashboardContainerWidth, "height": 0.7*dashboardContainerWidth};
+const dashboardSize = {"width": dashboardContainerWidth, "height": 0.5*dashboardContainerWidth};
 
 const dashboardAxisFont = "monospace";
 const dashboardDefaultFont = "Helvetica";

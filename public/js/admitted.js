@@ -1,7 +1,7 @@
 const admittedMargin = {left: 45, right: 5, top: 5, bottom: 5};
 
 const admittedContainerWidth = 600;
-const admittedSize = {"width": admittedContainerWidth, "height": 0.5*admittedContainerWidth};
+const admittedSize = {"width": admittedContainerWidth, "height": 0.4*admittedContainerWidth};
 
 const admittedAxisFont = "monospace";
 const admittedDefaultFont = "Helvetica";
