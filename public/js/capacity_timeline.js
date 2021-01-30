@@ -13,6 +13,10 @@ const capacityTimelineColorscale = {
 	4: "purple",
 };
 
+import {capacityTimelineDescription} from "./figure_text.js";
+
+export {createCapacityTimeline};
+
 
 function createCapacityTimeline(response, add_description=true) {
 	const section = document.getElementById("section-results-dashboard");

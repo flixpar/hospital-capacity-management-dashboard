@@ -1,3 +1,6 @@
+export {createRidgePlot};
+import {ridgeplotDescription} from "./figure_text.js";
+
 function createRidgePlot(table, location_names, resource, add_description=true) {
 	const data = convertData(table, location_names);
 	const fig = buildRidgePlot(data, resource);
@@ -10,9 +13,6 @@ function createRidgePlot(table, location_names, resource, add_description=true) 
 	}
 
 	section.appendChild(fig);
-
-	let hr = document.createElement("hr");
-	section.appendChild(hr);
 }
 
 function convertData(table, location_names) {
@@ -55,7 +55,7 @@ function buildRidgePlot(data, resource) {
 		.domain([-maxElem, maxElem]).nice()
 		.range([-scaleFactor*y.step(), scaleFactor*y.step()])
 
-	xAxis = g => g
+	const xAxis = g => g
 		.attr("transform", `translate(0,${height - margin.bottom})`)
 		.style("font-size","12px")
 		.call(d3.axisBottom(x)
@@ -63,7 +63,7 @@ function buildRidgePlot(data, resource) {
 			.tickSizeOuter(0)
 			.tickFormat(d3.timeFormat("%m/%d"))
 		);
-	yAxis = g => g
+	const yAxis = g => g
 		.attr("transform", `translate(${margin.left},0)`)
 		.style("font-size","12px")
 		.call(d3.axisLeft(y).tickSize(0).tickPadding(10))
@@ -72,7 +72,7 @@ function buildRidgePlot(data, resource) {
 	const colorbarScale = d3.scalePoint()
 		.domain(d3.range(Math.round(maxElem), -Math.round(maxElem)-1, -Math.round(maxElem/1)))
 		.range([(height/2) - (colorscale_height/2), (height/2) + (colorscale_height/2)]);
-	colorAxis = g => g
+	const colorAxis = g => g
 		.attr("transform", `translate(${width-margin.right+50},0)`)
 		.style("font-size","11px")
 		.call(d3.axisRight(colorbarScale)

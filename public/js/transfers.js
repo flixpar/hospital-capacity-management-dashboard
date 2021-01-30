@@ -10,6 +10,11 @@ const tfrBarColors = {
 	"default": "blue",
 };
 
+import {makeHorizontalColorScale} from "./common.js";
+import {transfersDescription} from "./figure_text.js";
+
+export {createTransfersBreakdownPlot};
+
 
 function createTransfersBreakdownPlot(response, add_description=true) {
 	const section = document.getElementById("section-results-dashboard");

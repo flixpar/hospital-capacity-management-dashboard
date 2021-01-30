@@ -21,6 +21,9 @@ const admittedLineColors = {
 	"default": "blue",
 };
 
+import {admittedDescription} from "./figure_text.js";
+export {createAdmittedPlot};
+
 
 function createAdmittedPlot(response, add_description=true) {
 	const section = document.getElementById("section-results-admdis");
@@ -145,7 +148,7 @@ function plotAdmitted(svg, xScale, yScale, data, response, locIdx, plotSize, plo
 		.datum(data["admitted_null"][locIdx])
 		.attr("fill", "none")
 		.attr("stroke", locColor)
-		.attr("stroke-width", lineWidth/1.5)
+		.attr("stroke-width", admittedLineWidth/1.5)
 		.attr("stroke-linejoin", "round")
 		.attr("stroke-linecap", "round")
 		.attr("opacity", 0.25)

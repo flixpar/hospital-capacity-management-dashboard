@@ -16,8 +16,10 @@ const bedsLineWidth = 8;
 
 const addPoints = true;
 
+import {makeHorizontalColorScale} from "./common.js";
+import {activeplotDescription} from "./figure_text.js";
 
-function createActivePlot(response, add_description=true) {
+export function createActivePlot(response, add_description=true) {
 	const capacity = response.capacity;
 	const active = response.active;
 	const active_null = response.active_null;
@@ -222,6 +224,7 @@ function createActivePlot(response, add_description=true) {
 
 	if (add_description) {
 		let description = document.createElement("p");
+		description.className = "caption";
 		description.innerHTML = activeplotDescription;
 		section.appendChild(description);
 	}
@@ -238,57 +241,12 @@ function createActivePlot(response, add_description=true) {
 	section.appendChild(table);
 }
 
-function makeHorizontalColorScale(labels, colors) {
-	const C = labels.length;
-
-	const totalWidth = document.getElementById("results-container").clientWidth;
-
-	const maxLabelLength = d3.max(labels, x => x.length);
-	const colWidth = (maxLabelLength * 4.5) + 14 + 20;
-
-	const actualWidth = colWidth * C;
-	const marginLeft  = (totalWidth - actualWidth) / 2;
-
-	const svg = d3.create("svg")
-		.attr("viewBox", [0, 0, totalWidth, 20]);
-
-	for (let c = 0; c < C; c++) {
-
-		const offset = c * colWidth;
-
-		svg.append("rect")
-			.attr("x", marginLeft + 2 + offset)
-			.attr("y", 2)
-			.attr("width", 10)
-			.attr("height", 10)
-			.attr("fill", colors[c])
-			.attr("stroke", "none");
-
-		svg.append("text")
-			.attr("x", marginLeft + 18 + offset)
-			.attr("y", 10)
-			.attr("text-anchor", "start")
-			.style("font-family", font)
-			.style("font-size", "10px")
-			.text(labels[c]);
-
-	}
-
-	let colorscale = svg.node();
-
-	let colorscaleElem = document.createElement("div");
-	colorscaleElem.className = "column is-fullwidth";
-	colorscaleElem.style.padding = "0";
-	colorscaleElem.appendChild(colorscale);
-
-	return colorscaleElem;
-}
-
 const bisectDate = d3.bisector(d => d.date).left;
 function bisect(lines, date, yval) {
 	const line1 = lines[0];
+	const T = line1.length;
 	const i = bisectDate(line1, date, 1);
-	const a = line1[i - 1], b = line1[i];
+	const a = line1[(i<=0)?0:(i-1)], b = line1[(i>=T)?(T-1):i];
 	const d = date - a.date > b.date - date ? b.date : a.date;
 	const v = lines.map(l => l.findIndex(x => x.date == d));
 	const j = d3.minIndex(v.map((x,k) => Math.abs(lines[k][x].value - yval)));

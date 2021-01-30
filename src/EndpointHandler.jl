@@ -150,7 +150,7 @@ function handle_patients_request(
 		:node_locations    => data.node_locations,
 		:capacity_names => data.capacity_names,
 		:node_type => "hospital",
-		:region    => "jhhs",
+		:region    => (region_type="hospital_system", region_name="JHHS", region_fullname="Johns Hopkins Health System"),
 		:extent    => data.extent,
 		:capacity_util => capacity_util,
 		:default_capacity_level => default_capacity_level,

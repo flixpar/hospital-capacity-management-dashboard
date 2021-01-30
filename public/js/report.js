@@ -1,3 +1,7 @@
+import {createCapacityTimeline} from "./capacity_timeline.js";
+import {createTransfersBreakdownPlot} from "./transfers.js";
+
+
 function handleResponse(response) {
 	console.log(response);
 
@@ -73,7 +77,7 @@ function createAdmissionSimsTable(response, sectionName) {
 	let blank = document.createElement("th");
 	tableHeaderRow.appendChild(blank);
 
-	for (capacitylevel of tableData.capacitylevel) {
+	for (const capacitylevel of tableData.capacitylevel) {
 		let th = document.createElement("th");
 		th.textContent = capacitylevel;
 		tableHeaderRow.appendChild(th);
@@ -93,7 +97,7 @@ function createAdmissionSimsTable(response, sectionName) {
 
 		const currentLevel = response.admission_sims.current_admissions[i].toFixed(0);
 
-		for (v of tableData[h]) {
+		for (const v of tableData[h]) {
 			let td = document.createElement("td");
 			td.textContent = (v == -1) ? 0 : v;
 			td.style.color = (v < currentLevel) ? "red" : "green";

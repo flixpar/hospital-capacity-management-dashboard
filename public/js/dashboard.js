@@ -23,6 +23,11 @@ const dashboardLineColors = {
 	"default": "blue",
 };
 
+import {makeHorizontalColorScale} from "./common.js";
+import {dashboardDescription} from "./figure_text.js";
+
+export {createJHHSDashboard};
+
 
 function createJHHSDashboard(response, add_description=true) {
 	const section = document.getElementById("section-results-dashboard");
@@ -170,7 +175,7 @@ function plotActive(svg, xScale, yScale, data, response, locIdx, plotSize, plotM
 		.datum(data["active_null"][locIdx])
 		.attr("fill", "none")
 		.attr("stroke", locColor)
-		.attr("stroke-width", lineWidth/1.5)
+		.attr("stroke-width", dashboardLineWidth/1.5)
 		.attr("stroke-linejoin", "round")
 		.attr("stroke-linecap", "round")
 		.attr("opacity", 0.25)
