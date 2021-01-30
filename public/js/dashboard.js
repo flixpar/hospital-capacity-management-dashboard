@@ -12,6 +12,8 @@ const dashboardTitleFontSize = 10;
 const dashboardLineWidth = 2;
 const dashboardCapacityLineWidth = 1;
 
+const dashboardAxisColor = "#4a4a4a";
+
 const dashboardCapacityColors = ["gold", "darkorange", "red", "purple", "black"];
 const dashboardLineColors = {
 	"BMC":  "#006C67",
@@ -44,6 +46,8 @@ function createJHHSDashboard(response, add_description=true) {
 	const capacityColorscaleElem = makeHorizontalColorScale(capacityNames, dashboardCapacityColors);
 	capacityColorscaleElem.style.marginTop = "20px";
 	section.appendChild(capacityColorscaleElem);
+	fig.setAttribute("figure-name", "capacity-dashboard");
+	fig.classList.add("figure");
 
 	let hr = document.createElement("hr");
 	section.appendChild(hr);
@@ -104,30 +108,38 @@ function plotActive(svg, xScale, yScale, data, response, locIdx, plotSize, plotM
 		.style("font-family", dashboardAxisFont)
 		.style("font-size", dashboardAxisFontSize)
 		.call(d3.axisBottom(xScale)
-					.ticks(d3.timeWeek.every(3))
-					.tickSizeOuter(4)
-					.tickFormat(d3.timeFormat("%m/%d"))
-				 )
+			.ticks(d3.timeWeek.every(3))
+			.tickSizeOuter(4)
+			.tickFormat(d3.timeFormat("%m/%d"))
+		)
 		.call(g => g.select(".domain").remove())
 		.call(g => g.selectAll(".tick line")
-					.attr("stroke-width", 0.5)
-					.attr("stroke-opacity", 0.75)
-				 )
-		.call(g => g.selectAll(".tick text").attr("dy", 10));
+			.attr("stroke", dashboardAxisColor)
+			.attr("stroke-width", 0.5)
+			.attr("stroke-opacity", 0.75)
+		)
+		.call(g => g.selectAll(".tick text")
+			.attr("fill", dashboardAxisColor)
+			.attr("dy", 10)
+		);
 
 	const yAxis = g => g
 		.attr("transform", `translate(${plotMargin.left},0)`)
 		.call(d3.axisRight(yScale)
-					.ticks(4)
-					.tickSize(plotSize.width - plotMargin.left - plotMargin.right)
-					.tickFormat("")
-				 )
+			.ticks(4)
+			.tickSize(plotSize.width - plotMargin.left - plotMargin.right)
+			.tickFormat("")
+		)
 		.call(g => g.select(".domain").remove())
 		.call(g => g.selectAll(".tick line")
-					.attr("stroke-width", 0.5)
-					.attr("stroke-opacity", 0.5)
-					.attr("stroke-dasharray", "4,4")
-				 );
+			.attr("stroke", dashboardAxisColor)
+			.attr("stroke-width", 0.5)
+			.attr("stroke-opacity", 0.5)
+			.attr("stroke-dasharray", "4,4")
+		)
+		.call(g => g.selectAll(".tick text")
+			.attr("fill", dashboardAxisColor)
+		);
 
 	svg.append("g")
 		.call(xAxis);
@@ -227,22 +239,25 @@ function makeYAxis(svg, xScale, yScale, plotSize, plotMargin) {
 	.style("font-family", dashboardAxisFont)
 	.style("font-size", dashboardAxisFontSize)
 	.call(d3.axisRight(yScale)
-				.ticks(4)
-				.tickSize(6)
-			 )
+		.ticks(4)
+		.tickSize(6)
+	)
 	.call(g => g.selectAll(".domain")
-				.attr("stroke-width", 0.5)
-				.attr("stroke-opacity", 0.75)
-			 )
+		.attr("stroke", dashboardAxisColor)
+		.attr("stroke-width", 0.5)
+		.attr("stroke-opacity", 0.75)
+	)
 	.call(g => g.selectAll(".tick line")
-				.attr("stroke-width", 0.5)
-				.attr("stroke-opacity", 0.75)
-			 )
+		.attr("stroke", dashboardAxisColor)
+		.attr("stroke-width", 0.5)
+		.attr("stroke-opacity", 0.75)
+	)
 	.call(g => g.selectAll(".tick text")
-				.attr("x", -20)
-				.attr("dy", 2)
-				.attr("text-anchor", "start")
-			 );
+		.attr("fill", dashboardAxisColor)
+		.attr("x", -20)
+		.attr("dy", 2)
+		.attr("text-anchor", "start")
+	);
 
 	svg.append("g")
 		.call(yAxis);

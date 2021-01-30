@@ -13,6 +13,7 @@ import {createRidgePlot} from "./ridgeplot.js";
 import {createActivePlot} from "./activeplot.js";
 import {createStatsSummary, createSurgeCapacityMetrics} from "./metrics.js";
 import {setupTable, setupTableFilter, setupTableDownloads} from "./tables.js";
+import {generateAllFigureDownloadButtons} from "./figuredl.js";
 
 let container = document.getElementById("result-area");
 let recentResponse = null;
@@ -52,6 +53,8 @@ function handleResponse(response, status, xhr) {
 	setupTable(response.full_results, true, "full-table", "Full Results");
 	setupTableFilter("full-table");
 	setupTableDownloads(response);
+
+	generateAllFigureDownloadButtons();
 
 	console.log("Done.");
 }

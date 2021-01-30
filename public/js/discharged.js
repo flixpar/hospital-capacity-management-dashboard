@@ -10,6 +10,7 @@ const dischargedAxisFontSize = 8;
 const dischargedTitleFontSize = 10;
 
 const dischargedLineWidth = 2;
+const axisColor = "#4a4a4a";
 
 const dischargedLineColors = {
 	"BMC":  "#006C67",
@@ -35,6 +36,9 @@ function createDischargedPlot(response, add_description=true) {
 
 	const fig = makeDischargedPlot(response);
 	section.appendChild(fig);
+
+	fig.setAttribute("figure-name", "discharges");
+	fig.classList.add("figure");
 }
 
 function makeDischargedPlot(response) {
@@ -89,30 +93,38 @@ function plotDischarged(svg, xScale, yScale, data, response, locIdx, plotSize, p
 		.style("font-family", dischargedAxisFont)
 		.style("font-size", dischargedAxisFontSize)
 		.call(d3.axisBottom(xScale)
-					.ticks(d3.timeWeek.every(3))
-					.tickSizeOuter(4)
-					.tickFormat(d3.timeFormat("%m/%d"))
-				 )
+			.ticks(d3.timeWeek.every(3))
+			.tickSizeOuter(4)
+			.tickFormat(d3.timeFormat("%m/%d"))
+		)
 		.call(g => g.select(".domain").remove())
 		.call(g => g.selectAll(".tick line")
-					.attr("stroke-width", 0.5)
-					.attr("stroke-opacity", 0.75)
-				 )
-		.call(g => g.selectAll(".tick text").attr("dy", 10));
+			.attr("stroke", axisColor)
+			.attr("stroke-width", 0.5)
+			.attr("stroke-opacity", 0.75)
+		)
+		.call(g => g.selectAll(".tick text")
+			.attr("fill", axisColor)
+			.attr("dy", 10)
+		);
 
-	const yAxis = g => g
-		.attr("transform", `translate(${plotMargin.left},0)`)
-		.call(d3.axisRight(yScale)
-					.ticks(4)
-					.tickSize(plotSize.width - plotMargin.left - plotMargin.right)
-					.tickFormat("")
-				 )
-		.call(g => g.select(".domain").remove())
-		.call(g => g.selectAll(".tick line")
-					.attr("stroke-width", 0.5)
-					.attr("stroke-opacity", 0.5)
-					.attr("stroke-dasharray", "4,4")
-				 );
+		const yAxis = g => g
+			.attr("transform", `translate(${plotMargin.left},0)`)
+			.call(d3.axisRight(yScale)
+				.ticks(4)
+				.tickSize(plotSize.width - plotMargin.left - plotMargin.right)
+				.tickFormat("")
+			)
+			.call(g => g.select(".domain").remove())
+			.call(g => g.selectAll(".tick line")
+				.attr("stroke", axisColor)
+				.attr("stroke-width", 0.5)
+				.attr("stroke-opacity", 0.5)
+				.attr("stroke-dasharray", "4,4")
+			)
+			.call(g => g.selectAll(".tick text")
+				.attr("fill", axisColor)
+			);
 
 	svg.append("g")
 		.call(xAxis);
@@ -197,22 +209,24 @@ function makeYAxisDischarged(svg, xScale, yScale, plotSize, plotMargin) {
 	.style("font-family", dischargedAxisFont)
 	.style("font-size", dischargedAxisFontSize)
 	.call(d3.axisRight(yScale)
-				.ticks(4)
-				.tickSize(6)
-			 )
+		.ticks(4)
+		.tickSize(6)
+	)
 	.call(g => g.selectAll(".domain")
-				.attr("stroke-width", 0.5)
-				.attr("stroke-opacity", 0.75)
-			 )
+		.attr("stroke-width", 0.5)
+		.attr("stroke-opacity", 0.75)
+	)
 	.call(g => g.selectAll(".tick line")
-				.attr("stroke-width", 0.5)
-				.attr("stroke-opacity", 0.75)
-			 )
+		.attr("stroke", axisColor)
+		.attr("stroke-width", 0.5)
+		.attr("stroke-opacity", 0.75)
+	)
 	.call(g => g.selectAll(".tick text")
-				.attr("x", -20)
-				.attr("dy", 2)
-				.attr("text-anchor", "start")
-			 );
+		.attr("fill", axisColor)
+		.attr("x", -20)
+		.attr("dy", 2)
+		.attr("text-anchor", "start")
+	);
 
 	svg.append("g")
 		.call(yAxis);

@@ -34,6 +34,9 @@ function createCapacityTimeline(response, add_description=true) {
 
 	const fig = makeCapacityTimeline(response, true, true);
 	section.appendChild(fig);
+
+	fig.setAttribute("figure-name", "capacity-timeline");
+	fig.classList.add("figure");
 }
 
 function makeCapacityTimeline(response, addLabels=false, withTransfers=true) {
@@ -165,6 +168,7 @@ function makeCapacityTimelineAxis(svg, response, subplotSize) {
 		)
 		.call(g => g.select(".domain").remove())
 		.call(g => g.selectAll(".tick line")
+			.attr("stroke", "#4a4a4a")
 			.attr("stroke-width", 0.25)
 			.attr("stroke-opacity", 0.5)
 			.attr("stroke-dasharray", "5,5")
@@ -188,9 +192,11 @@ function makeCapacityTimelineAxis(svg, response, subplotSize) {
 		)
 		.call(g => g.select(".domain").remove())
 		.call(g => g.selectAll(".tick text")
+			.attr("fill", "#4a4a4a")
 			.attr("dy", 6)
 		)
 		.call(g => g.selectAll(".tick line")
+			.attr("stroke", "#4a4a4a")
 			.attr("stroke-width", 0.5)
 			.attr("stroke-opacity", 1.0)
 		);

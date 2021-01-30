@@ -39,6 +39,8 @@ function createTransfersBreakdownPlot(response, add_description=true) {
 	colorscaleTitleElem.style.fontSize = "14px";
 	colorscaleTitleElem.style.textAlign = "center";
 	hospColorscaleElem.insertBefore(colorscaleTitleElem, hospColorscaleElem.childNodes[0]);
+	fig.setAttribute("figure-name", "transfers-breakdown");
+	fig.classList.add("figure");
 
 	let hr = document.createElement("hr");
 	section.appendChild(hr);
@@ -98,9 +100,13 @@ function makeTransfersBreakdownSubplot(svg, response, locIdx, plotSize) {
 	)
 	.call(g => g.select(".domain").remove())
 	.call(g => g.selectAll(".tick line")
+		.attr("stroke", "#4a4a4a")
 		.attr("stroke-width", 0.25)
 		.attr("stroke-opacity", 0.5)
 		.attr("stroke-dasharray", "4,4")
+	)
+	.call(g => g.selectAll(".tick text")
+		.attr("fill", "#4a4a4a")
 	);
 
 	const yAxis = svg => svg
@@ -115,11 +121,13 @@ function makeTransfersBreakdownSubplot(svg, response, locIdx, plotSize) {
 		.remove()
 	)
 	.call(g => g.selectAll(".tick line")
+		.attr("stroke", "#4a4a4a")
 		.attr("stroke-width", 0.25)
 		.attr("stroke-opacity", 0.5)
 		.attr("stroke-dasharray", "4,4")
 	)
 	.call(g => g.selectAll(".tick text")
+		.attr("fill", "#4a4a4a")
 		.attr("x", "-10px")
 		.attr("dy", "4px")
 		.attr("text-anchor", "end")
@@ -205,7 +213,11 @@ function makeTransfersBreakdownXAxis(svg, response, plotSize) {
 		.tickFormat(d3.timeFormat("%m/%d"))
 	)
 	.call(g => g.select(".domain").remove())
+	.call(g => g.selectAll(".tick line")
+		.attr("stroke", "#4a4a4a")
+	)
 	.call(g => g.selectAll(".tick text")
+		.attr("fill", "#4a4a4a")
 		.attr("dy", -2)
 	);
 

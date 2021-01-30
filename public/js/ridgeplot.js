@@ -13,6 +13,9 @@ function createRidgePlot(table, location_names, resource, add_description=true) 
 	}
 
 	section.appendChild(fig);
+
+	fig.setAttribute("figure-name", "transfers-ridgeplot");
+	fig.classList.add("figure");
 }
 
 function convertData(table, location_names) {
@@ -62,12 +65,16 @@ function buildRidgePlot(data, resource) {
 			.ticks(width / 100)
 			.tickSizeOuter(0)
 			.tickFormat(d3.timeFormat("%m/%d"))
-		);
+		)
+		.call(g => g.selectAll(".tick line").attr("stroke", "#4a4a4a"))
+		.call(g => g.selectAll(".tick text").attr("fill", "#4a4a4a"));
 	const yAxis = g => g
 		.attr("transform", `translate(${margin.left},0)`)
 		.style("font-size","12px")
 		.call(d3.axisLeft(y).tickSize(0).tickPadding(10))
-		.call(g => g.select(".domain").remove());
+		.call(g => g.select(".domain").remove())
+		.call(g => g.selectAll(".tick line").attr("stroke", "#4a4a4a"))
+		.call(g => g.selectAll(".tick text").attr("fill", "#4a4a4a"));
 
 	const colorbarScale = d3.scalePoint()
 		.domain(d3.range(Math.round(maxElem), -Math.round(maxElem)-1, -Math.round(maxElem/1)))
@@ -77,7 +84,9 @@ function buildRidgePlot(data, resource) {
 		.style("font-size","11px")
 		.call(d3.axisRight(colorbarScale)
 		.tickPadding(4))
-		.call(g => g.select(".domain").remove());
+		.call(g => g.select(".domain").remove())
+		.call(g => g.selectAll(".tick line").attr("stroke", "#4a4a4a"))
+		.call(g => g.selectAll(".tick text").attr("fill", "#4a4a4a"));
 	const color = d3.scaleSequential([1,0], d3.interpolateRdYlGn);
 
 	const area = d3.area()
