@@ -56,7 +56,10 @@ function handle_patients_request(
 
 	N, C = size(data.capacity)
 
-	if objective == :minoverflow
+	if objective == :none
+		N, T = size(data.admitted)
+		sent = zeros(Float64, N, N, T)
+	elseif objective == :minoverflow
 		objective_weights = ones(Float64, N, C)
 		objective_weights[:,end] = 1.0 .- (0.003 * surge_preferences)
 
@@ -78,6 +81,7 @@ function handle_patients_request(
 			constrain_integer=constrain_integer,
 			verbose=false,
 		)
+		sent = value.(model[:sent])
 	elseif objective == :loadbalance
 		model = patient_loadbalance(
 			data.capacity[:,default_capacity_level],
@@ -96,6 +100,7 @@ function handle_patients_request(
 			constrain_integer=constrain_integer,
 			verbose=false,
 		)
+		sent = value.(model[:sent])
 	elseif objective == :hybrid
 		node_weights = 1.0 .- (0.003 * surge_preferences)
 		capacity_weights = ones(Int, C)
@@ -124,10 +129,10 @@ function handle_patients_request(
 			constrain_integer=constrain_integer,
 			verbose=false,
 		)
+		sent = value.(model[:sent])
 	else
 		error("Invalid objective: $(objective)")
 	end
-	sent = value.(model[:sent])
 
 	results = PatientAllocationResults.results_all(
 		sent,
