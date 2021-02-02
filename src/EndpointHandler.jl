@@ -147,9 +147,9 @@ function handle_patients_request(
 	)
 
 	config = Dict(
-		:start_date => start_date,
-		:end_date   => end_date,
-		:dates      => collect(start_date : Day(1) : end_date),
+		:start_date => data.start_date,
+		:end_date   => data.end_date,
+		:dates      => collect(data.start_date : Day(1) : data.end_date),
 		:node_names => data.node_names,
 		:node_names_abbrev => data.node_names_abbrev,
 		:node_locations    => data.node_locations,

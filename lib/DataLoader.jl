@@ -25,7 +25,14 @@ function load_jhhs(
 	@assert(start_date < end_date)
 	@assert(patient_type in [:icu, :ward, :all])
 
-	data = deserialize("data/data_jhhs.jlser")
+	shortterm = (scenario == :shortterm)
+
+	data = shortterm ? deserialize("data/data_jhhs_shortterm.jlser") : deserialize("data/data_jhhs.jlser")
+
+	if shortterm
+		start_date = data.start_date
+		end_date = data.end_date
+	end
 
 	@assert data.start_date <= start_date < end_date <= data.end_date
 
@@ -45,6 +52,10 @@ function load_jhhs(
 	day0 = max(data.start_date, start_date - Day(1))
 	day0_idx = (day0 - data.start_date).value + 1
 	initial = casesdata.active[:, day0_idx]
+
+	if shortterm
+		initial = casesdata.initial
+	end
 
 	discharged = Array{Float64,2}(undef, N, T)
 	for i in 1:N
@@ -70,6 +81,8 @@ function load_jhhs(
 		beds = beds,
 		capacity = capacity,
 		adj = adj,
+		start_date = start_date,
+		end_date = end_date,
 		node_locations = node_locations,
 		node_names = hospitals,
 		node_names_abbrev = hospitals_abbrev,
