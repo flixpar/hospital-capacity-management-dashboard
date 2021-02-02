@@ -1,9 +1,12 @@
 export {createRidgePlot};
 import {ridgeplotDescription} from "./figure_text.js";
 
-function createRidgePlot(table, location_names, resource, add_description=true) {
+function createRidgePlot(response, add_description=true) {
+	const table = response.net_sent;
+	const location_names = response.config.node_names;
+
 	const data = convertData(table, location_names);
-	const fig = buildRidgePlot(data, resource);
+	const fig = buildRidgePlot(data);
 
 	const section = document.getElementById("section-results-transfers");
 	if (add_description) {
@@ -26,7 +29,7 @@ function convertData(table, location_names) {
 	}
 }
 
-function buildRidgePlot(data, resource) {
+function buildRidgePlot(data) {
 
 	const margin = {top: 60, right: 120, bottom: 30, left: 100};
 	const scaleFactor = 0.8;
@@ -36,15 +39,8 @@ function buildRidgePlot(data, resource) {
 	const height = data.series.length * heght_scale;
 	const colorscale_height = Math.min(300, 0.8 * height);
 
-	let title = "";
-	let colorLabel = "";
-	if (resource === "patients") {
-		title = "Net Patients Recieved per Location over Time";
-		colorLabel = "Net Patients";
-	} else if (resource == "nurses") {
-		title = "Net Nurses per Location over Time";
-		colorLabel = "Net Nurses";
-	}
+	const title = "Net Patients Recieved per Location over Time";
+	const colorLabel = "Net Patients";
 
 	const maxElem = Math.max(Math.abs(d3.min(data.series, d => d3.min(d.values))), Math.abs(d3.max(data.series, d => d3.max(d.values))))
 

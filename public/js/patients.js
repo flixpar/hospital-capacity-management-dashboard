@@ -47,7 +47,7 @@ function handleResponse(response, status, xhr) {
 	createOverallLoadPlot(response);
 	createLoadPlots(response);
 	createTransfersSankey(response);
-	createRidgePlot(response.net_sent, response.config.node_names, "patients");
+	createRidgePlot(response);
 
 	setupTable(response.summary, true, "summary-table", "Summary Statistics");
 	setupTable(response.full_results, true, "full-table", "Full Results");
