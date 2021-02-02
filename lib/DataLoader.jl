@@ -65,7 +65,7 @@ function load_jhhs(
 		end
 	end
 
-	default_capacity_level = size(casesdata.capacity,2)
+	default_capacity_level = 1
 	beds = casesdata.capacity[:,default_capacity_level]
 	capacity = casesdata.capacity
 

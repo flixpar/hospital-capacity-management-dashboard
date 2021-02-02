@@ -12,7 +12,7 @@ const stackHorizontal = true;
 const styleID = "flixpar/ckjny4kzy3alx19o4bi0von7c";
 const accessToken = "pk.eyJ1IjoiZmxpeHBhciIsImEiOiJja2kyN2l5dHIxanF0MnNrYjltZXNzbDJyIn0._W2ABd-tjVMdDqncb9ny9A";
 
-const pointSizeUniform = true;
+const pointSizeUniform = false;
 const pointSizeMult = 0.75;
 const thicknessMult = 0.5;
 

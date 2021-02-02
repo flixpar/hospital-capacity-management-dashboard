@@ -35,7 +35,7 @@ function handle_patients_request(
 	@assert patient_type in [:ward, :icu, :all]
 
 	data = load_jhhs(scenario, patient_type, start_date, end_date)
-	default_capacity_level = 4
+	default_capacity_level = 1
 
 	if los_param == "default_dist"
 		los_dist = los_dist_default(patient_type)
