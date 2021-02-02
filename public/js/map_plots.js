@@ -40,6 +40,8 @@ export function createMap(rawdata, metric, transfers="both", add_description=tru
 	let plotTitle, colorbarLabel;
 	let dynamic;
 
+	const totalTransfers = d3.sum(rawdata.sent, x => d3.sum(x, y => d3.sum(y)));
+
 	if (metric == "load") {
 		dynamic = true;
 		const data = extractDataDynamic(rawdata);
@@ -106,8 +108,12 @@ export function createMap(rawdata, metric, transfers="both", add_description=tru
 
 	const section = document.getElementById("section-results-maps");
 
-	let tfrSelect = createMapTransfersSelect(rawdata, metric, transfers, add_description);
-	section.appendChild(tfrSelect);
+	if (totalTransfers > 0.1) {
+		let tfrSelect = createMapTransfersSelect(rawdata, metric, transfers, add_description);
+		section.appendChild(tfrSelect);
+	} else {
+		transfers = "no_transfers";
+	}
 
 	let figContainer = document.createElement("div");
 	section.appendChild(figContainer);

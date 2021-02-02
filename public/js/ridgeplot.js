@@ -2,6 +2,9 @@ export {createRidgePlot};
 import {ridgeplotDescription} from "./figure_text.js";
 
 function createRidgePlot(response, add_description=true) {
+	const totalSent = d3.sum(response.sent, x => d3.sum(x, y => d3.sum(y)));
+	if (totalSent < 0.1) {return;}
+
 	const table = response.net_sent;
 	const location_names = response.config.node_names;
 

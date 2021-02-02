@@ -61,16 +61,23 @@ function makeLoadPlots(rawdata, capacityLevel=0, plotTitle="COVID Occupancy by H
 	const labelsWidth = 45;
 	const titleHeight = 40;
 
-	const totalWidth = 2*loadPlotsWidth + loadPlotsMargin.left + loadPlotsMargin.right + betweenMargin + labelsWidth;
+	const totalSent = d3.sum(rawdata.sent, x => d3.sum(x, y => d3.sum(y)));
+	const showTransfers = totalSent > 0.1;
+
+	let totalWidth = 2*loadPlotsWidth + loadPlotsMargin.left + loadPlotsMargin.right + betweenMargin + labelsWidth;
 	const totalHeight = loadPlotsHeight + loadPlotsMargin.top + loadPlotsMargin.bottom + titleHeight;
 	let legendHeight;
+
+	if (!showTransfers) {
+		totalWidth = loadPlotsWidth + loadPlotsMargin.left + loadPlotsMargin.right + labelsWidth;
+	}
 
 	let svg = d3.create("svg").attr("viewBox", [0, 0, totalWidth, totalHeight]);
 
 	let g1 = svg.append("g").attr("transform", `translate(${loadPlotsMargin.left}, ${loadPlotsMargin.top + titleHeight})`);
 	let g2 = svg.append("g").attr("transform", `translate(${loadPlotsMargin.left + betweenMargin + loadPlotsWidth}, ${loadPlotsMargin.top + titleHeight})`);
 	let g3 = svg.append("g").attr("transform", `translate(0, ${loadPlotsHeight + loadPlotsMargin.top + loadPlotsMargin.bottom + titleHeight})`);
-	let g4 = svg.append("g").attr("transform", `translate(${loadPlotsMargin.left + betweenMargin + 2*loadPlotsWidth}, ${loadPlotsMargin.top + titleHeight})`);
+	let g4 = svg.append("g").attr("transform", `translate(${totalWidth - loadPlotsMargin.right - labelsWidth}, ${loadPlotsMargin.top + titleHeight})`);
 
 	const maxLoadVal = d3.max(loadData.load_null, x => d3.max(x, y => y.value))
 	const maxY = Math.min(5.0, Math.max(2.0, Math.ceil(maxLoadVal)));
@@ -80,7 +87,7 @@ function makeLoadPlots(rawdata, capacityLevel=0, plotTitle="COVID Occupancy by H
 		.range([loadPlotsHeight, 0]);
 
 	g1 = makeLoadPlot(g1, loadData.load_null, yScale, maxY, "Without Optimal Transfers");
-	g2 = makeLoadPlot(g2, loadData.load, yScale, maxY, "With Optimal Transfers");
+	g2 = showTransfers ? makeLoadPlot(g2, loadData.load, yScale, maxY, "With Optimal Transfers") : g2;
 	g3, legendHeight = makeLoadPlotsLegend(g3, rawdata.config.node_names, totalWidth);
 	g4 = makeLoadLabels(g4, yScale, maxY);
 

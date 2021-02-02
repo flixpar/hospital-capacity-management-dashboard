@@ -17,6 +17,9 @@ export {createTransfersBreakdownPlot};
 
 
 function createTransfersBreakdownPlot(response, add_description=true) {
+	const totalSent = d3.sum(response.sent, x => d3.sum(x, y => d3.sum(y)));
+	if (totalSent < 0.1) {return;}
+
 	const section = document.getElementById("section-results-dashboard");
 	if (add_description) {
 		let description = document.createElement("p");

@@ -13,7 +13,10 @@ function createTransfersSankey(response, add_description=true) {
 		let text = document.createElement("p");
 		text.textContent = "No transfers";
 		section.appendChild(text);
+		section.style.display = "none";
 		return;
+	} else {
+		section.style.display = "block";
 	}
 
 	const graph = toGraph(response, false);
