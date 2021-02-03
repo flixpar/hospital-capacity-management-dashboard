@@ -2,6 +2,7 @@ export {
 	toTitlecase,
 	getSection,
 	createInfo,
+	createSelect,
 	getDateIntervals,
 	makeHorizontalColorScale,
 	makeLegend,
@@ -24,6 +25,53 @@ function createInfo(parentElement, content) {
 		parentElement.appendChild(el);
 	}
 	return el;
+}
+
+function createSelect(options, params={}) {
+	let select = document.createElement("select");
+	let selectWrapper = document.createElement("div");
+	let selectContainer = document.createElement("div");
+
+	options.forEach(o => {
+		let opt = document.createElement("option");
+		opt.text = o.text;
+		opt.value = (o.value == null) ? o.text : o.value;
+		if (opt.value == params.defaultValue) {
+			opt.selected = true;
+		}
+		select.appendChild(opt);
+	});
+
+	let selectLabel;
+	if (params.label != null) {
+		selectLabel = document.createElement("label");
+		selectLabel.textContent = params.label;
+		selectLabel.style.marginRight = "20px";
+		selectContainer.appendChild(selectLabel);
+	}
+
+	if (params.id != null) {
+		select.id = params.id;
+		if (params.label != null) {
+			selectLabel.htmlFor = params.id;
+		}
+	}
+
+	selectContainer.className = "field";
+	selectContainer.style.display = "flex";
+	selectContainer.style.justifyContent = "center";
+	selectContainer.style.alignItems = "center";
+
+	selectWrapper.className = "select is-fullwidth";
+	selectWrapper.style.width = "35%";
+	selectWrapper.style.minWidth = "fit-content";
+	selectWrapper.style.marginTop = "10px";
+	selectWrapper.style.marginBottom = "10px";
+
+	selectWrapper.appendChild(select);
+	selectContainer.appendChild(selectWrapper);
+
+	return selectContainer;
 }
 
 function getDateIntervals(dates) {

@@ -5,7 +5,7 @@ const loadPlotsFont = "Helvetica";
 const loadPlotsLegendFont = "Monospace";
 const loadPlotsShowPoints = false;
 
-import {getDateIntervals, getSection} from "./common.js";
+import {getDateIntervals, getSection, createSelect} from "./common.js";
 import {loadplotsDescription, overallloadplotDescription} from "./figure_text.js";
 
 export {createOverallLoadPlot, createLoadPlots};
@@ -553,19 +553,12 @@ function extractOverallLoadData(rawdata, capacityLevel=3) {
 }
 
 function createCapacityOption(plotName, rawdata) {
-	let capacitySelect = document.createElement("select");
-	capacitySelect.id = plotName + "-capacitylevel";
 
 	const capacityNames = rawdata.config.capacity_names;
-	for (let c = 0; c < capacityNames.length; c++) {
-		let opt = document.createElement("option");
-		opt.text = capacityNames[c];
-		opt.value = c;
-		if (c == 0) {
-			opt.selected = true;
-		}
-		capacitySelect.appendChild(opt);
-	}
+	const options = capacityNames.map((c,i) => ({text: c, value: i}));
+
+	const selectContainer = createSelect(options, {label: "Capacity Level:", id: `${plotName}-capacitylevel`});
+	let capacitySelect = selectContainer.querySelector("select");
 
 	let plotSection = null;
 	if (plotName == "overallloadplot") {
@@ -597,27 +590,5 @@ function createCapacityOption(plotName, rawdata) {
 		plotSection = getSection("results-load");
 	}
 
-	let capacitySelectLabel = document.createElement("label");
-	capacitySelectLabel.innerHTML = "Capacity Level:";
-	capacitySelectLabel.for = plotName + "-capacitylevel";
-	capacitySelectLabel.style.marginRight = "20px";
-
-	let selectContainer = document.createElement("div");
-	let selectWrapper = document.createElement("div");
-
-	selectContainer.className = "field";
-	selectContainer.style.display = "flex";
-	selectContainer.style.justifyContent = "center";
-	selectContainer.style.alignItems = "center";
-
-	selectWrapper.className = "select is-fullwidth";
-	selectWrapper.style.width = "35%";
-	selectWrapper.style.minWidth = "fit-content";
-	selectWrapper.style.marginTop = "10px";
-	selectWrapper.style.marginBottom = "10px";
-
-	selectWrapper.appendChild(capacitySelect);
-	selectContainer.appendChild(capacitySelectLabel);
-	selectContainer.appendChild(selectWrapper);
 	plotSection.appendChild(selectContainer);
 }
