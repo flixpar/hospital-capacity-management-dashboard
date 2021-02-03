@@ -1,10 +1,12 @@
 export {createStatsSummary, createSurgeCapacityMetrics};
 
-import {getSection} from "./common.js";
+import {getSection, createSelect} from "./common.js";
 import {metricsDescription} from "./figure_text.js";
 
+const add_description = false;
 
-function createSurgeCapacityMetrics(rawdata) {
+
+function createSurgeCapacityMetrics(rawdata, capacityLevel=0) {
 	const N = rawdata.config.node_names.length;
 	const T = rawdata.config.dates.length;
 	const C = rawdata.capacity[0].length;
@@ -12,9 +14,9 @@ function createSurgeCapacityMetrics(rawdata) {
 
 	const max_active_wtfr = d3.range(N).map(i => d3.max(rawdata.active[i]));
 	const max_active_notfr = d3.range(N).map(i => d3.max(rawdata.active_null[i]));
-	const max_overflows_wtfr = max_active_wtfr.map((a,i) => Math.max(0, a - rawdata.capacity[i][C-1]));
-	const max_overflows_notfr = max_active_notfr.map((a,i) => Math.max(0, a - rawdata.capacity[i][C-1]));
 	const max_capacitylevels_wtfr = max_active_wtfr.map((m,i) => rawdata.capacity[i].findIndex(c => c > m)).map(x => (x == -1) ? C-1 : x-1);
+	const max_overflows_wtfr = max_active_wtfr.map((a,i) => Math.max(0, a - rawdata.capacity[i][capacityLevel]));
+	const max_overflows_notfr = max_active_notfr.map((a,i) => Math.max(0, a - rawdata.capacity[i][capacityLevel]));
 
 	let table = document.createElement("table");
 	table.id = "surgemetrics-table";
@@ -62,7 +64,7 @@ function createSurgeCapacityMetrics(rawdata) {
 	const totalActive = d3.range(T).map(t => d3.sum(rawdata.active, a => a[t]));
 	const maxActive = d3.max(totalActive);
 	const totalCapacity = d3.range(C).map(c => d3.sum(rawdata.capacity, x => x[c]));
-	const idealOverflow = Math.max(0, maxActive - totalCapacity[C-1]);
+	const idealOverflow = Math.max(0, maxActive - totalCapacity[capacityLevel]);
 	const idealCapLevel = totalCapacity.findIndex(c => c > maxActive);
 	const idealCapLevelIdx = (idealCapLevel == -1) ? C-1 : idealCapLevel-1;
 	const idealCapLevelName = rawdata.config.capacity_names[idealCapLevelIdx];
@@ -90,11 +92,17 @@ function createSurgeCapacityMetrics(rawdata) {
 		}
 	}
 
-	const section = getSection("results-metrics");
-	section.appendChild(table);
+	if (document.getElementById("surgemetrics-table") == null) {
+		const section = getSection("results-metrics");
+		section.appendChild(table);
+	} else {
+		document.getElementById("surgemetrics-table").replaceWith(table);
+	}
 }
 
-function createStatsSummary(rawdata, add_description=true) {
+function createStatsSummary(rawdata, capacityLevel=0) {
+	createMetricsCapacitySelect(rawdata);
+
 	const N = rawdata.config.node_names.length;
 	const T = rawdata.config.dates.length;
 	const nDecimals = 0;
@@ -128,8 +136,8 @@ function createStatsSummary(rawdata, add_description=true) {
 		}
 	}
 
-	const overflow_byloc = d3.range(N).map(i => rawdata.active[i].map(x => Math.max(0, x - rawdata.beds[i])));
-	const overflow_nosent_byloc = d3.range(N).map(i => rawdata.active_null[i].map(x => Math.max(0, x - rawdata.beds[i])));
+	const overflow_byloc = d3.range(N).map(i => rawdata.active[i].map(x => Math.max(0, x - rawdata.capacity[i][capacityLevel])));
+	const overflow_nosent_byloc = d3.range(N).map(i => rawdata.active_null[i].map(x => Math.max(0, x - rawdata.capacity[i][capacityLevel])));
 
 	const overflow_nosent = d3.sum(d3.merge(overflow_nosent_byloc));
 	const overflow_sent = d3.sum(d3.merge(overflow_byloc));
@@ -151,16 +159,37 @@ function createStatsSummary(rawdata, add_description=true) {
 	addMetric("Transferred Patients", sent_total);
 	addMetric("Perecent of Patients Transferred", (sent_pct * 100).toFixed(2) + "%");
 
-	const section = getSection("results-metrics");
+	if (document.getElementById("metrics-table") == null) {
+		const section = getSection("results-metrics");
 
-	if (add_description) {
-		let description = document.createElement("p");
-		description.innerHTML = metricsDescription;
-		section.appendChild(description);
+		if (add_description) {
+			let description = document.createElement("p");
+			description.innerHTML = metricsDescription;
+			section.appendChild(description);
+		}
+
+		section.appendChild(table);
+
+		section.appendChild(document.createElement("hr"));
+	} else {
+		document.getElementById("metrics-table").replaceWith(table);
 	}
+}
 
-	section.appendChild(table);
+function createMetricsCapacitySelect(rawdata) {
+	if (document.getElementById("metrics-capacitylevel-select")) {return;}
 
-	let hr = document.createElement("hr");
-	section.appendChild(hr);
+	const capacityNames = rawdata.config.capacity_names;
+	const options = capacityNames.map((c,i) => ({text: c, value: i}));
+
+	const selectContainer = createSelect(options, {label: "Capacity Level:", id: "metrics-capacitylevel-select"});
+	let capacitySelect = selectContainer.querySelector("select");
+
+	capacitySelect.addEventListener("change", () => {
+		createStatsSummary(rawdata, capacitySelect.value);
+		createSurgeCapacityMetrics(rawdata, capacitySelect.value);
+	});
+
+	const section = getSection("results-metrics");
+	section.appendChild(selectContainer);
 }
