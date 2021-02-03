@@ -556,7 +556,7 @@ function createCapacityOption(plotName, rawdata) {
 	let capacitySelect = document.createElement("select");
 	capacitySelect.id = plotName + "-capacitylevel";
 
-	const capacityNames = ["Baseline Capacity", "Ramp-Up Capacity", "Surge Capacity", "Max Capacity"];
+	const capacityNames = rawdata.config.capacity_names;
 	for (let c = 0; c < capacityNames.length; c++) {
 		let opt = document.createElement("option");
 		opt.text = capacityNames[c];
@@ -567,12 +567,7 @@ function createCapacityOption(plotName, rawdata) {
 		capacitySelect.appendChild(opt);
 	}
 
-	let capacitySelectLabel = document.createElement("label");
-	capacitySelectLabel.innerHTML = "Capacity Level:";
-	capacitySelectLabel.for = plotName + "-capacitylevel";
-
 	let plotSection = null;
-
 	if (plotName == "overallloadplot") {
 		capacitySelect.addEventListener("change", e => {
 			e.preventDefault();
@@ -602,11 +597,27 @@ function createCapacityOption(plotName, rawdata) {
 		plotSection = getSection("results-load");
 	}
 
-	let capacitySelectField = document.createElement("div");
-	capacitySelectField.style.textAlign = "center";
+	let capacitySelectLabel = document.createElement("label");
+	capacitySelectLabel.innerHTML = "Capacity Level:";
+	capacitySelectLabel.for = plotName + "-capacitylevel";
 	capacitySelectLabel.style.marginRight = "20px";
 
-	capacitySelectField.appendChild(capacitySelectLabel);
-	capacitySelectField.appendChild(capacitySelect);
-	plotSection.appendChild(capacitySelectField);
+	let selectContainer = document.createElement("div");
+	let selectWrapper = document.createElement("div");
+
+	selectContainer.className = "field";
+	selectContainer.style.display = "flex";
+	selectContainer.style.justifyContent = "center";
+	selectContainer.style.alignItems = "center";
+
+	selectWrapper.className = "select is-fullwidth";
+	selectWrapper.style.width = "35%";
+	selectWrapper.style.minWidth = "fit-content";
+	selectWrapper.style.marginTop = "10px";
+	selectWrapper.style.marginBottom = "10px";
+
+	selectWrapper.appendChild(capacitySelect);
+	selectContainer.appendChild(capacitySelectLabel);
+	selectContainer.appendChild(selectWrapper);
+	plotSection.appendChild(selectContainer);
 }

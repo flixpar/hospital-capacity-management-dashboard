@@ -25,6 +25,10 @@
 	margin-bottom: 0px !important;
 }
 
+.buttons:not(:last-child) {
+	margin-bottom: 0px;
+}
+
 #form-submit {
 	line-height: 1em;
 }
