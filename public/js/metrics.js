@@ -14,9 +14,9 @@ function createSurgeCapacityMetrics(rawdata, capacityLevel=0) {
 
 	const max_active_wtfr = d3.range(N).map(i => d3.max(rawdata.active[i]));
 	const max_active_notfr = d3.range(N).map(i => d3.max(rawdata.active_null[i]));
-	const max_capacitylevels_wtfr = max_active_wtfr.map((m,i) => rawdata.capacity[i].findIndex(c => c > m)).map(x => (x == -1) ? C-1 : x-1);
 	const max_overflows_wtfr = max_active_wtfr.map((a,i) => Math.max(0, a - rawdata.capacity[i][capacityLevel]));
 	const max_overflows_notfr = max_active_notfr.map((a,i) => Math.max(0, a - rawdata.capacity[i][capacityLevel]));
+	const max_capacitylevels_wtfr = max_active_wtfr.map((m,i) => rawdata.capacity[i].findIndex(c => c > m)).map(x => (x == -1) ? C-1 : Math.max(0, x-1));
 
 	let table = document.createElement("table");
 	table.id = "surgemetrics-table";
@@ -66,7 +66,7 @@ function createSurgeCapacityMetrics(rawdata, capacityLevel=0) {
 	const totalCapacity = d3.range(C).map(c => d3.sum(rawdata.capacity, x => x[c]));
 	const idealOverflow = Math.max(0, maxActive - totalCapacity[capacityLevel]);
 	const idealCapLevel = totalCapacity.findIndex(c => c > maxActive);
-	const idealCapLevelIdx = (idealCapLevel == -1) ? C-1 : idealCapLevel-1;
+	const idealCapLevelIdx = (idealCapLevel == -1) ? C-1 : Math.max(0, idealCapLevel-1);
 	const idealCapLevelName = rawdata.config.capacity_names[idealCapLevelIdx];
 	addColumn(["Ideal", idealOverflow, "–", idealCapLevelName]);
 
@@ -142,6 +142,7 @@ function createStatsSummary(rawdata, capacityLevel=0) {
 	const overflow_nosent = d3.sum(d3.merge(overflow_nosent_byloc));
 	const overflow_sent = d3.sum(d3.merge(overflow_byloc));
 	const overflow_reduction = (overflow_nosent - overflow_sent) / overflow_nosent;
+	const overflow_reduction_str = (overflow_nosent != 0) ? (overflow_reduction * 100).toFixed(2) + "%" : "–";
 
 	const maxoverflow_nosent = d3.sum(d3.range(N).map(i => d3.max(overflow_nosent_byloc[i])));
 	const maxoverflow_sent = d3.sum(d3.range(N).map(i => d3.max(overflow_byloc[i])));;
@@ -151,7 +152,7 @@ function createStatsSummary(rawdata, capacityLevel=0) {
 
 	addMetric("Required Surge Capacity (Without Transfers)", overflow_nosent);
 	addMetric("Required Surge Capacity (With Transfers)", overflow_sent);
-	addMetric("Reduction in Required Surge Capacity", (overflow_reduction * 100).toFixed(2) + "%");
+	addMetric("Reduction in Required Surge Capacity", overflow_reduction_str);
 	addMetricSeparator();
 	addMetric("Max Required Surge Capacity (Without Transfers)", maxoverflow_nosent);
 	addMetric("Max Required Surge Capacity (With Transfers)", maxoverflow_sent);
