@@ -31,7 +31,7 @@ const debugMap = false;
 let storedGeometry = null;
 
 // import {generateHiddenText} from "./figure_text.js";
-import {getDateIntervals, toTitlecase} from "./common.js";
+import {getDateIntervals, toTitlecase, createSelect} from "./common.js";
 
 
 export function createMap(rawdata, metric, transfers="both", add_description=true) {
@@ -888,39 +888,17 @@ function setupMapAnimations(svg, response) {
 }
 
 function createMapTransfersSelect(rawdata, metric, transfersDefault, add_description) {
-	let selectContainer = document.createElement("div");
-	let selectWrapper = document.createElement("div");
-	let selectInput = document.createElement("select");
+	const options = [
+		{text: "With Optimal Transfers", value: "transfers"},
+		{text: "Without Optimal Transfers", value: "no_transfers"},
+		{text: "Both", value: "both"},
+	];
 
-	selectContainer.className = "field";
-	selectContainer.style.display = "flex";
-	selectContainer.style.justifyContent = "center";
-	selectContainer.style.marginBottom = "10px";
+	const selectContainer = createSelect(options, {id: "map-transfers-select", defaultValue: transfersDefault});
+	let select = selectContainer.querySelector("select");
 
-	selectWrapper.className = "select is-fullwidth";
-	selectWrapper.style.width = "35%";
-	selectWrapper.style.minWidth = "fit-content";
-	selectWrapper.style.marginBottom = "10px";
-	
-	selectInput.className = "select-bold-text";
-
-	selectWrapper.appendChild(selectInput);
-	selectContainer.appendChild(selectWrapper);
-
-	function addOption(text, value) {
-		let opt = document.createElement("option");
-		opt.text = text;
-		opt.value = (value == null) ? text : value;
-		if (opt.value == transfersDefault) {opt.selected = true;}
-		selectInput.appendChild(opt);
-	}
-
-	addOption("With Optimal Transfers", "transfers");
-	addOption("Without Optimal Transfers", "no_transfers");
-	addOption("Both", "both");
-
-	selectInput.addEventListener("change", e => {
-		const tfrValue = selectInput.value;
+	select.addEventListener("change", () => {
+		const tfrValue = select.value;
 		document.getElementById("section-results-maps").innerHTML = "";
 		createMap(rawdata, metric, tfrValue, add_description);
 	});
