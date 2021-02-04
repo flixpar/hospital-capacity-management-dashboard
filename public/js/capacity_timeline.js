@@ -13,14 +13,14 @@ const capacityTimelineColorscale = {
 	4: "purple",
 };
 
-import {makeLegend} from "./common.js";
+import {getSection, makeLegend, createSelect} from "./common.js";
 import {capacityTimelineDescription} from "./figure_text.js";
 
 export {createCapacityTimeline};
 
 
 function createCapacityTimeline(response, add_description=true) {
-	const section = document.getElementById("section-results-dashboard");
+	const section = getSection("results-dashboard");
 	if (add_description) {
 		let description = document.createElement("p");
 		description.innerHTML = capacityTimelineDescription;
@@ -30,14 +30,14 @@ function createCapacityTimeline(response, add_description=true) {
 	let title = document.createElement("h5");
 	title.className = "title is-5";
 	title.style.textAlign = "center";
+	title.style.marginBottom = "0px";
 	title.textContent = "Capacity Timeline";
 	section.appendChild(title);
 
+	createTransfersSelect(response);
+
 	const fig = makeCapacityTimeline(response, true, true);
 	section.appendChild(fig);
-
-	fig.setAttribute("figure-name", "capacity-timeline");
-	fig.classList.add("figure");
 }
 
 function makeCapacityTimeline(response, addLabels=false, withTransfers=true) {
@@ -64,6 +64,10 @@ function makeCapacityTimeline(response, addLabels=false, withTransfers=true) {
 	svg = makeCapacityTimelineLegend(svg, response);
 
 	svg.append(() => tooltip.node);
+
+	svg.attr("id", "capacity-timeline");
+	svg.attr("figure-name", "capacity-timeline");
+	svg.node().classList.add("figure");
 
 	return svg.node();
 }
@@ -262,6 +266,27 @@ function computeCapacityTimelineData(response, locIdx, withTransfers=true) {
 	});
 
 	return timelineData;
+}
+
+function createTransfersSelect(response) {
+	if (document.getElementById("capacitytimeline-transfers-select")) {return;}
+
+	const options = [
+		{text: "With Transfers", value: "true"},
+		{text: "Without Transfers", value: "false"},
+	];
+
+	const selectContainer = createSelect(options, {id: "capacitytimeline-transfers-select"});
+	let select = selectContainer.querySelector("select");
+
+	select.addEventListener("change", () => {
+		let oldFig = document.getElementById("capacity-timeline");
+		let fig = makeCapacityTimeline(response, true, (select.value == "true"));
+		oldFig.replaceWith(fig);
+	});
+
+	const section = getSection("results-dashboard");
+	section.appendChild(selectContainer);
 }
 
 class CapacityTimelineTooltip {
