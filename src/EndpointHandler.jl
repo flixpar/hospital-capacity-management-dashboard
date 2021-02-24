@@ -13,6 +13,7 @@ import PatientAllocationResults
 
 export handle_patients_request
 export generate_report
+export get_all_data
 
 
 function handle_patients_request(
@@ -226,6 +227,10 @@ function generate_report()
 	)
 
 	return responses
+end
+
+function get_all_data(patienttype, scenario)
+	return load_completedata(patienttype, scenario)
 end
 
 end;

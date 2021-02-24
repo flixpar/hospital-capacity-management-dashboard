@@ -9,6 +9,7 @@ using Dates
 using LinearAlgebra
 
 export load_jhhs
+export load_completedata
 export los_dist_default
 
 basepath = joinpath(dirname(@__FILE__), "../")
@@ -94,6 +95,37 @@ function load_jhhs(
 		outdata = add_bcc(outdata)
 	end
 
+	return outdata
+end
+
+function load_completedata(patienttype, scenario)
+	patienttype = Symbol(patienttype)
+	scenario = Symbol(scenario)
+	hasadmitted = (patienttype == :total)
+	data = deserialize("data/alldata.jlser")
+	outdata = (
+		realdata = (
+			active = data.realdata[patienttype].active,
+			admitted = hasadmitted ? data.realdata[patienttype].admitted : nothing,
+			meta = data.realdata[:meta],
+		),
+		shortterm = (
+			active = data.shortterm[patienttype].active,
+			admitted = hasadmitted ? data.shortterm[patienttype].admitted : nothing,
+			meta = data.shortterm[:meta],
+		),
+		longterm = (
+			active = data.longterm[(patienttype, scenario)].active,
+			admitted = hasadmitted ? data.longterm[(patienttype, scenario)].admitted : nothing,
+			meta = data.longterm[:meta],
+		),
+		capacity = data.capacity[patienttype],
+		hospitals = data.capacity[:meta].hospitals,
+		meta = (;
+			capacity_names = data.capacity[:meta].capacity_names,
+			hasadmitted,
+		),
+	)
 	return outdata
 end
 

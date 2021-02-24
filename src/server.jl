@@ -72,6 +72,13 @@ route("/api/report", method=GET) do
 	return json(response)
 end
 
+route("/api/data", method=GET) do
+	patienttype = @params(:patienttype)
+	scenario = @params(:scenario)
+	response = get_all_data(patienttype, scenario)
+	return json(response)
+end
+
 
 haskey(ENV, "GENIE_ENV") || (ENV["GENIE_ENV"] = "dev")
 if !haskey(ENV, "HOST")
