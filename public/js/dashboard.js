@@ -28,7 +28,7 @@ const dashboardLineColors = {
 import {makeLegend} from "./common.js";
 import {dashboardDescription} from "./figure_text.js";
 
-export {createJHHSDashboard};
+export {createJHHSDashboard, makeJHHSDashboard};
 
 
 function createJHHSDashboard(response, add_description=true) {

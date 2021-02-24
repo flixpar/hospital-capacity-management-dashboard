@@ -27,6 +27,10 @@ route("/shortterm") do
 	serve_static_file("html/shortterm.html")
 end
 
+route("/data") do
+	serve_static_file("html/data.html")
+end
+
 route("/report") do
 	serve_static_file("html/report.html")
 end

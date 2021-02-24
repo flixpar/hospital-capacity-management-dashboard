@@ -16,7 +16,7 @@ const capacityTimelineColorscale = {
 import {getSection, makeLegend, createSelect} from "./common.js";
 import {capacityTimelineDescription} from "./figure_text.js";
 
-export {createCapacityTimeline};
+export {createCapacityTimeline, makeCapacityTimeline};
 
 
 function createCapacityTimeline(response, add_description=true) {
