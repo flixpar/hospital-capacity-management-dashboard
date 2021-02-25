@@ -1,13 +1,10 @@
 export {makeDataCompareFigure};
 
 const lineColors = {
-	"BMC": "#006C67",
-	"HCGH": "#B9314F",
-	"JHH": "#454E9E",
-	"SH": "#95B46A",
-	"SMH": "#B6C2D9",
-	"BCC": "#9370DB",
-	"default": "blue",
+	"realdata": "gray",
+	"shortterm":  "#006C67",
+	"longterm":  "#454E9E",
+	"default": "black",
 };
 const capacityColors = ["gold", "darkorange", "red", "purple", "black"];
 const axisColor = "#4a4a4a";
@@ -18,7 +15,7 @@ const fontSizes = {
 	title: 10,
 };
 
-const lineWidth = 1.0;
+const lineWidth = 1.25;
 
 const figureMargins = {left: 5, right: 5, top: 5, bottom: 5};
 const plotMargins   = {left: 0, right: 0, top: 0, bottom: 0, between: 20};
@@ -38,6 +35,8 @@ function makeDataCompareFigure(response, datatype) {
 		container = plotHospital(response, datatype, i, container, svg);
 	}
 
+	svg.node().dispatchEvent(new Event("buildTooltips"));
+
 	return svg.node();
 }
 
@@ -45,13 +44,13 @@ function plotHospital(response, datatype, locIdx, container, svg) {
 
 	const data = extractData(response, datatype, locIdx);
 
-	const plotInnerSize = { width: plotSize.width - plotPadding.left - plotPadding.right, height: plotSize.height - plotPadding.top - plotPadding.bottom };
+	const plotInnerSize = {width: plotSize.width - plotPadding.left - plotPadding.right, height: plotSize.height - plotPadding.top - plotPadding.bottom};
 
 	const xScale = d3.scaleUtc()
 		.domain(d3.extent(data.meta.dates))
 		.range([plotPadding.left, plotPadding.left + plotInnerSize.width]);
 	const yScale = d3.scaleLinear()
-		.domain([0, data.meta.maxY]).nice()
+		.domain([0, data.meta.maxY+10]).nice()
 		.range([plotSize.height - plotPadding.bottom, plotPadding.top]);
 
 	const xAxis = g => g
@@ -59,9 +58,9 @@ function plotHospital(response, datatype, locIdx, container, svg) {
 		.style("font-family", font)
 		.style("font-size", fontSizes.axis)
 		.call(d3.axisBottom(xScale)
-			.ticks(d3.timeWeek.every(8))
+			.ticks(d3.utcWeek.every(8))
 			.tickSizeOuter(4)
-			.tickFormat(d3.timeFormat("%Y-%m-%d"))
+			.tickFormat(d3.utcFormat("%Y-%m-%d"))
 		)
 		.call(g => g.select(".domain").remove())
 		.call(g => g.selectAll(".tick line")
@@ -98,9 +97,14 @@ function plotHospital(response, datatype, locIdx, container, svg) {
 	container.append("g")
 		.call(yAxis);
 
-	container = plotData(data.longterm, xScale, yScale, container, "blue");
-	container = plotData(data.shortterm, xScale, yScale, container, "green");
-	container = plotData(data.realdata, xScale, yScale, container, "black");
+	container = plotLine(data.longterm, xScale, yScale, container, lineColors.longterm);
+	container = plotLine(data.shortterm, xScale, yScale, container, lineColors.shortterm);
+	container = plotLine(data.realdata, xScale, yScale, container, lineColors.realdata);
+
+	data.capacity.forEach((capacity, c) => {
+		if (capacity[0].value >= yScale.domain()[1]) {return;}
+		container = plotLine(capacity, xScale, yScale, container, capacityColors[c]);
+	});
 
 	const yAxisText = (datatype == "active" ? "Occupancy" : "Admissions");
 	container.append("text")
@@ -119,24 +123,32 @@ function plotHospital(response, datatype, locIdx, container, svg) {
 		.style("font-size", fontSizes.title)
 		.text(titleText);
 
+	const tooltip = new Tooltip(data, xScale, yScale, container, svg);
+
 	return container;
 }
 
 function extractData(response, datatype, locIdx) {
 	const realdataX = response.realdata.meta.date_range.map(d => new Date(d));
 	const realdataY = response.realdata[datatype].map(x => x[locIdx]);
-	const realdataData = realdataX.map((x, i) => ({ date: x, value: realdataY[i], label: "Real Data" }));
+	const realdataData = realdataX.map((x, i) => ({date: x, value: realdataY[i], label: "Real Data"}));
 
 	const longtermX = response.longterm.meta.date_range.map(d => new Date(d));
 	const longtermY = response.longterm[datatype].map(x => x[locIdx]);
-	const longtermData = longtermX.map((x, i) => ({ date: x, value: longtermY[i], label: "Long-Term Forecast" }));
+	const longtermData = longtermX.map((x, i) => ({date: x, value: longtermY[i], label: "Long-Term Forecast"}));
 
 	const shorttermX = response.shortterm.meta.date_range.map(d => new Date(d));
 	const shorttermY = response.shortterm[datatype].map(x => x[locIdx]);
-	const shorttermData = shorttermX.map((x, i) => ({ date: x, value: shorttermY[i], label: "Short-Term Forecast" }));
+	const shorttermData = shorttermX.map((x, i) => ({date: x, value: shorttermY[i], label: "Short-Term Forecast"}));
 
 	let allDates = realdataX.concat(longtermX).concat(shorttermX);
 	allDates = [...new Set(allDates)];
+
+	const capacityData = (datatype != "active") ? [] : response.meta.capacity_names.map((cn,c) => {
+		return allDates.map(d => {
+			return {date: d, value: response.capacity[c][locIdx], label: cn + " Capacity"};
+		});
+	});
 
 	const maxY = d3.max([d3.max(realdataY), d3.max(longtermY), d3.max(shorttermY)]);
 
@@ -144,11 +156,17 @@ function extractData(response, datatype, locIdx) {
 		realdata: realdataData,
 		longterm: longtermData,
 		shortterm: shorttermData,
-		meta: { dates: allDates, maxY: maxY, datatype: datatype },
+		capacity: capacityData,
+		meta: {
+			dates: allDates,
+			maxY: maxY,
+			datatype: datatype,
+			locName: response.hospitals[locIdx],
+		},
 	}
 }
 
-function plotData(data, xScale, yScale, container, lineColor) {
+function plotLine(data, xScale, yScale, container, lineColor) {
 
 	const line = d3.line()
 		.defined(d => !isNaN(d.value) && d.value != null)
@@ -165,4 +183,135 @@ function plotData(data, xScale, yScale, container, lineColor) {
 		.attr("d", line);
 
 	return container;
+}
+
+class Tooltip {
+	constructor(data, xScale, yScale, container, svg) {
+		this.data = data;
+		this.xScale = xScale;
+		this.yScale = yScale;
+		this.container = container;
+		this.svg = svg;
+
+		this.lines = [data.realdata, data.shortterm, data.longterm];
+		data.capacity.forEach(c => {
+			if (c[0].value < yScale.domain()[1]) {this.lines.push(c);}
+		});
+
+		let tmpSVG = d3.create("svg");
+		let tmpNode = tmpSVG.append("g")
+			.attr("pointer-events", "none")
+			.attr("display", "none")
+			.attr("font-family", font)
+			.attr("font-size", fontSizes.axis)
+			.attr("text-anchor", "middle");
+
+		this.bubble = tmpNode.append("rect")
+			.attr("transform", "translate(-50, -65)")
+			.attr("width", 100)
+			.attr("height", 45)
+			.attr("fill", "white")
+			.attr("stroke", "gray")
+			.attr("stroke-width", 1.5);
+		this.topTab = tmpNode.append("rect")
+			.attr("transform", "translate(0, -72) rotate(45)")
+			.attr("width", 12)
+			.attr("height", 12)
+			.attr("fill", "white")
+			.attr("stroke", "gray")
+			.attr("stroke-width", 1.0);
+		this.bottomTab = tmpNode.append("rect")
+			.attr("transform", "translate(0, -30) rotate(45)")
+			.attr("width", 12)
+			.attr("height", 12)
+			.attr("fill", "white")
+			.attr("stroke", "gray")
+			.attr("stroke-width", 1.0);
+		this.bubbleBackground = tmpNode.append("rect")
+			.attr("transform", "translate(-50, -65)")
+			.attr("width", 100)
+			.attr("height", 45)
+			.attr("fill", "white");
+
+		this.line1 = tmpNode.append("text").attr("y", "-55").node();
+		this.line2 = tmpNode.append("text").attr("y", "-45").node();
+		this.line3 = tmpNode.append("text").attr("y", "-35").node();
+		this.line4 = tmpNode.append("text").attr("y", "-25").node();
+
+		this.point = tmpNode.append("circle")
+			.attr("stroke", "black")
+			.attr("fill", "none")
+			.attr("r", 2);
+
+		container.attr("pointer-events", "bounding-box");
+
+		this.bisectDate = d3.bisector(d => d.date).center;
+		this.dateFormat = d3.utcFormat("%Y-%m-%d");
+
+		let pt = svg.node().createSVGPoint();
+		function cursorLoc(e) {
+			pt.x = e.clientX;
+			pt.y = e.clientY;
+			return pt.matrixTransform(container.node().getScreenCTM().inverse());
+		}
+
+		container.on("mousemove", e => {
+			const pt = cursorLoc(e);
+			const d = this.bisectData(this.xScale.invert(pt.x), this.yScale.invert(pt.y));
+			if (d != null) {this.show(d);}
+		});
+		container.on("mouseleave", () => this.hide());
+
+		this.svg.node().addEventListener("buildTooltips", () => this.build());
+
+		this.node = tmpNode;
+	}
+
+	show(d, pt) {
+		this.node.attr("display", "");
+		this.node.attr("transform", `${this.container.attr("transform")} translate(${this.xScale(d.date)},${this.yScale(d.value)})`);
+
+		if (this.yScale(d.value) < 60) {
+			this.node.attr("transform", `${this.node.attr("transform")} translate(0,80)`);
+			this.topTab.attr("display", "");
+			this.bottomTab.attr("display", "none");
+			this.point.attr("transform", "translate(0,-80)");
+		} else {
+			this.topTab.attr("display", "none");
+			this.bottomTab.attr("display", "");
+			this.point.attr("transform", "");
+		}
+
+		const datatypeStr = (d.label.indexOf("Capacity") >= 0) ? "Beds" : (this.data.meta.datatype == "active") ? "Occupancy" : "Admissions";
+
+		this.line1.textContent = this.data.meta.locName;
+		this.line2.textContent = d.label;
+		this.line3.textContent = this.dateFormat(d.date);
+		this.line4.textContent = datatypeStr + ": " + d.value.toFixed(0);
+	}
+
+	hide() {
+		this.node.attr("display", "none");
+	}
+
+	build() {
+		this.svg.append(() => this.node.node());
+	}
+
+	bisectData(date, yval) {
+		const dists = this.lines.map(l => {
+			const closestDateIdx = this.bisectDate(l, date, 1);
+			const closestDate = l[closestDateIdx].date;
+			if (this.dateFormat(date) != this.dateFormat(closestDate)) {return Infinity;}
+
+			const v = l[closestDateIdx].value;
+			return Math.abs(yval - v);
+		});
+
+		const lineIdx = d3.minIndex(dists);
+		const dateIdx = this.bisectDate(this.lines[lineIdx], date, 1);
+
+		if (dists[lineIdx] == Infinity) {return null;}
+		return this.lines[lineIdx][dateIdx];
+	}
 }
