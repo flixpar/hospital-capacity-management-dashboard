@@ -47,7 +47,7 @@ app.component("result-section", {
 
 app.component("fig", {
 	props: ["type", "args"],
-	template: `<div class="figure-component></div>`,
+	template: `<div class="figure-component"></div>`,
 	mounted() {
 		if (this.$root.status != "loaded") {}
 		else if (this.type == "data-compare") {
