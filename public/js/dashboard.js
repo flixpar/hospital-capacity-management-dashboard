@@ -207,8 +207,8 @@ function plotActive(svg, xScale, yScale, data, response, locIdx, plotSize, plotM
 		.attr("pointer-events", "visible");
 
 	const lines = [
-		data["active"][locIdx],
 		data["active_null"][locIdx],
+		data["active"][locIdx],
 	];
 	for (let c = 0; c < C; c++) {
 		lines.push(data["capacity"][locIdx][c]);

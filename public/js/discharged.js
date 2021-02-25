@@ -182,8 +182,8 @@ function plotDischarged(svg, xScale, yScale, data, response, locIdx, plotSize, p
 		.attr("pointer-events", "visible");
 
 	const lines = [
-		data["discharged"][locIdx],
 		data["discharged_null"][locIdx],
+		data["discharged"][locIdx],
 	];
 
 	let parentSVG = svg.node().parentElement;

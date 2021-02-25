@@ -184,8 +184,8 @@ function plotAdmitted(svg, xScale, yScale, data, response, locIdx, plotSize, plo
 		.attr("pointer-events", "visible");
 
 	const lines = [
-		data["admitted"][locIdx],
 		data["admitted_null"][locIdx],
+		data["admitted"][locIdx],
 	];
 
 	let parentSVG = svg.node().parentElement;
