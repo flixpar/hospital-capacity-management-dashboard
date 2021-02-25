@@ -11,11 +11,7 @@ const RootComponent = {
 			params: {scenario: "moderate", patienttype: "total"},
 		}
 	},
-	methods: {
-		createJHHSDashboard,
-		createCapacityTimeline,
-		createDataCompare,
-	},
+	methods: {},
 	watch: {
 		params: {
 			handler() {updateData()},
@@ -46,6 +42,24 @@ app.component("result-section", {
 	`,
 	methods: {
 		toggleSection,
+	}
+});
+
+app.component("fig", {
+	props: ["type", "args"],
+	template: `<div class="figure-component></div>`,
+	mounted() {
+		if (this.$root.status != "loaded") {}
+		else if (this.type == "data-compare") {
+			const fig = createDataCompare(this.$root.response, ...this.args);
+			this.$el.appendChild(fig);
+		} else if (this.type == "capacity-timeline") {
+			const fig = createCapacityTimeline(this.$root.response);
+			this.$el.appendChild(fig);
+		} else if (this.type == "dashboard") {
+			const fig = createJHHSDashboard(this.$root.response);
+			this.$el.appendChild(fig);
+		}
 	}
 });
 
@@ -88,18 +102,18 @@ function convertData(response, datatype="realdata") {
 function createJHHSDashboard(response) {
 	const data = convertData(response);
 	const fig = makeJHHSDashboard(data);
-	return fig.outerHTML;
+	return fig;
 }
 
 function createCapacityTimeline(response) {
 	const data = convertData(response);
 	const fig = makeCapacityTimeline(data, true, false);
-	return fig.outerHTML;
+	return fig;
 }
 
 function createDataCompare(response, datatype) {
-	const fig = makeDataCompareFigure(response, datatype);
-	return fig.outerHTML;
+	const fig = makeDataCompareFigure(unproxy(response), datatype);
+	return fig;
 }
 
 function updateData() {

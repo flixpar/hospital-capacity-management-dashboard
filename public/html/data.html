@@ -95,13 +95,13 @@
 			</div>
 			<div id="result-area" class="column is-12" v-else-if="status == 'loaded'">
 				<result-section title="Data Compare" section-id="datacompare">
-					<span v-html="createDataCompare(response, 'active')"></span>
+					<fig type="data-compare" :args="['active']"></fig>
 				</result-section>
 				<result-section title="Capacity Timeline" section-id="capacitytimeline">
-					<span v-html="createCapacityTimeline(response)"></span>
+					<fig type="capacity-timeline"></fig>
 				</result-section>
 				<result-section title="Other" section-id="other">
-					<span v-html="createJHHSDashboard(response)"></span>
+					<fig type="dashboard"></fig>
 				</result-section>
 			</div>
 			<div id="error-area" class="column is-10 is-offset-1 is-hidden" v-else>
