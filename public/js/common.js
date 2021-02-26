@@ -158,11 +158,12 @@ function makeLegend(svg, labels, colors, singleRow=true, position="bottom", debu
 	const nRows = singleRow ? 1 : Math.ceil(N / maxCols);
 	const nCols = singleRow ? N : Math.min(maxCols, N);
 
-	const actualWidth = colWidth * nCols;
-	const marginLeft  = (totalWidth - actualWidth) / 2;
-	const marginTop   = 10;
+	const actualWidth  = colWidth * nCols;
+	const marginLeft   = (totalWidth - actualWidth) / 2;
+	const marginTop    = (position == "bottom") ? 10 :  2;
+	const marginBottom = (position == "bottom") ? 10 : 13;
 
-	const totalHeight = (nRows * rowHeight) + marginTop + 5;
+	const totalHeight = (nRows * rowHeight) + marginTop + marginBottom;
 
 	for (let i = 0; i < nRows; i++) {
 		for (let j = 0; j < nCols; j++) {
@@ -210,7 +211,7 @@ function makeLegend(svg, labels, colors, singleRow=true, position="bottom", debu
 			.attr("stroke", "blue");
 	}
 
-	const offsetY = (position == "bottom") ? viewBox[3] : -totalHeight;
+	const offsetY = (position == "bottom") ? viewBox[3] : viewBox[1]-totalHeight;
 	legendG.attr("transform", `translate(0, ${offsetY})`);
 
 	if (position == "top") {

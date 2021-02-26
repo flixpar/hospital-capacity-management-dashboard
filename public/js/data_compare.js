@@ -1,4 +1,5 @@
 export {makeDataCompareFigure};
+import {makeLegend} from "./common.js";
 
 const lineColors = {
 	"realdata": "gray",
@@ -6,7 +7,7 @@ const lineColors = {
 	"longterm":  "#454E9E",
 	"default": "black",
 };
-const capacityColors = ["gold", "darkorange", "red", "purple", "black"];
+const capacityColors = ["gold", "darkorange", "red", "purple", "black", "magenta"];
 const axisColor = "#4a4a4a";
 
 const font = "Helvetica, sans-serif";
@@ -34,6 +35,8 @@ function makeDataCompareFigure(response, datatype) {
 		let container = svg.append("g").attr("transform", `translate(${figureMargins.left + plotMargins.left}, ${figureMargins.top + i * (plotMargins.top + plotSize.height + plotMargins.between + plotMargins.bottom)})`);
 		container = plotHospital(response, datatype, i, container, svg);
 	}
+
+	makeDataCompareLegend(svg, response, datatype);
 
 	svg.node().dispatchEvent(new Event("buildTooltips"));
 
@@ -314,4 +317,19 @@ class Tooltip {
 		if (dists[lineIdx] == Infinity) {return null;}
 		return this.lines[lineIdx][dateIdx];
 	}
+}
+
+function makeDataCompareLegend(svg, response, datatype) {
+
+	if (datatype == "active") {
+		const row2Labels = response.meta.capacity_names.map(x => x + " Capacity");
+		const row2Colors = response.meta.capacity_names.map((_,i) => capacityColors[i]);
+		svg = makeLegend(svg, row2Labels, row2Colors, true, "top");
+	}
+
+	const row1Labels = ["Short-Term Forecast", "Long-Term Forecast", "Real Data"];
+	const row1Colors = [lineColors.shortterm, lineColors.longterm, lineColors.realdata];
+	svg = makeLegend(svg, row1Labels, row1Colors, true, "top");
+
+	return svg;
 }
