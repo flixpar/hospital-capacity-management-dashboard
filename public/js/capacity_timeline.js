@@ -13,7 +13,7 @@ const capacityTimelineColorscale = {
 	4: "purple",
 };
 
-import {getSection, makeLegend, createSelect} from "./common.js";
+import {getSection, makeLegend, createSelect, getDateIntervals} from "./common.js";
 import {capacityTimelineDescription} from "./figure_text.js";
 
 export {createCapacityTimeline, makeCapacityTimeline};
@@ -186,12 +186,14 @@ function makeCapacityTimelineAxis(svg, response, subplotSize) {
 	const dateFormat = "%m/%d/%y";
 	// const dateFormat = "%Y-%m-%d";
 
+	const dateInterval = getDateIntervals(dates);
+
 	const xAxisLabels = g => g
 		.attr("transform", `translate(${capacityTimelinePlotMargins.left},${capacityTimelinePlotSize.height-10})`)
 		.style("font-family", "monospace")
 		.style("font-size", "8px")
 		.call(d3.axisBottom(xScale)
-			.ticks(d3.utcWeek.every(1))
+			.ticks(dateInterval)
 			.tickSize(-6)
 			.tickFormat(d3.timeFormat(dateFormat))
 		)
