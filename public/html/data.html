@@ -95,13 +95,13 @@
 			</div>
 			<div id="result-area" class="column is-12" v-else-if="status == 'loaded'">
 				<result-section title="Data Compare" section-id="datacompare">
-					<fig type="data-compare" :args="['active']"></fig>
+					<fig-options type="data-compare" :options="[{value: 'active', text: 'Occupancy'}, {value: 'admitted', text: 'Admissions'}]" :show-options="params.patienttype == 'total'"></fig-options>
 				</result-section>
 				<result-section title="Capacity Timeline" section-id="capacitytimeline">
-					<fig type="capacity-timeline"></fig>
 				</result-section>
 				<result-section title="Other" section-id="other">
 					<fig type="dashboard"></fig>
+					<fig-options type="capacity-timeline" :options="[{value: 'realdata', text: 'Real Data'}, {value: 'shortterm', text: 'Short-Term Forecast'}, {value: 'longterm', text: 'Long-Term Forecast'}]"></fig-options>
 				</result-section>
 			</div>
 			<div id="error-area" class="column is-10 is-offset-1 is-hidden" v-else>

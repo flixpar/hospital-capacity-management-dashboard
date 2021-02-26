@@ -60,6 +60,50 @@ app.component("fig", {
 			const fig = createJHHSDashboard(this.$root.response);
 			this.$el.appendChild(fig);
 		}
+	},
+});
+
+app.component("fig-options", {
+	props: {
+		type: {type: String, required: true},
+		options: {type: Object, required: true},
+		showOptions: {type: Boolean, required: false, default: true},
+	},
+	template: `
+		<div class="figure-component">
+			<div class="select is-fullwidth" style="width: 50%; left: 25%; margin-bottom: 15px;" v-if="showOptions">
+				<select v-model="arg">
+					<option v-for="opt in options" :value="opt.value">{{opt.text}}</option>
+				</select>
+			</div>
+			<div ref="figContainer"></div>
+		</div>`,
+	mounted() {
+		this.plotFigure();
+	},
+	data() {
+		return {
+			arg: this.options[0].value,
+		};
+	},
+	methods: {
+		plotFigure() {
+			this.$refs.figContainer.innerHTML = "";
+			if (this.$root.status != "loaded") {}
+			else if (this.type == "data-compare") {
+				const fig = createDataCompare(this.$root.response, this.arg);
+				this.$refs.figContainer.appendChild(fig);
+			} else if (this.type == "capacity-timeline") {
+				const fig = createCapacityTimeline(this.$root.response, this.arg);
+				this.$refs.figContainer.appendChild(fig);
+			} else if (this.type == "dashboard") {
+				const fig = createJHHSDashboard(this.$root.response, this.arg);
+				this.$refs.figContainer.appendChild(fig);
+			}
+		},
+	},
+	watch: {
+		arg: "plotFigure",
 	}
 });
 
@@ -83,14 +127,14 @@ function unproxy(x) {
 	return JSON.parse(JSON.stringify(x));
 }
 
-function convertData(response, datatype="realdata") {
+function convertData(response, datasource="realdata") {
 	let data = {
-		active: d3.transpose(response[datatype].active),
-		active_null: d3.transpose(response[datatype].active),
+		active: d3.transpose(response[datasource].active),
+		active_null: d3.transpose(response[datasource].active),
 		beds: response.capacity[0],
 		capacity: d3.transpose(response.capacity),
 		config: {
-			dates: response[datatype].meta.date_range,
+			dates: response[datasource].meta.date_range,
 			node_names: response.hospitals,
 			capacity_names: response.meta.capacity_names,
 		},
@@ -99,14 +143,14 @@ function convertData(response, datatype="realdata") {
 	return data;
 }
 
-function createJHHSDashboard(response) {
-	const data = convertData(response);
+function createJHHSDashboard(response, datasource="realdata") {
+	const data = convertData(response, datasource);
 	const fig = makeJHHSDashboard(data);
 	return fig;
 }
 
-function createCapacityTimeline(response) {
-	const data = convertData(response);
+function createCapacityTimeline(response, datasource="realdata") {
+	const data = convertData(response, datasource);
 	const fig = makeCapacityTimeline(data, true, false);
 	return fig;
 }
