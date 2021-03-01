@@ -252,7 +252,7 @@ const tooltip_content = {
 	"form-surgepreferences": "Preference for where to create additional capacity if it is necessary.",
 	"form-utilization": "Percentage of the total capacity that can be used in practice.",
 	"form-uncertainty": "Level of uncertainty in the forcast that we should plan for.",
-	"form-integer": "Use the mixed-integer programming formulation or not.",
+	"form-integer": "Use the mixed-integer programming formulation or not. Not recommended as solving the model may take much longer.",
 };
 $("#form label").each((i, el) => {
 	const k = el.getAttribute("for");

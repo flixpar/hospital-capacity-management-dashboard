@@ -12,19 +12,11 @@ using EndpointHandler
 
 
 route("/") do
-	serve_static_file("html/patients.html")
+	serve_static_file("html/data.html")
 end
 
 route("/patients") do
 	serve_static_file("html/patients.html")
-end
-
-route("/patients-integer") do
-	serve_static_file("html/patients_int.html")
-end
-
-route("/shortterm") do
-	serve_static_file("html/shortterm.html")
 end
 
 route("/data") do
