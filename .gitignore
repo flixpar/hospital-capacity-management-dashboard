@@ -24,3 +24,5 @@ backup/
 rawdata/
 
 *.lp
+
+analysis/

@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (window.location.pathname == elem.pathname) {
 			elem.classList.add("is-active");
 		}
-		if (window.location.pathname == "/" && elem.pathname == "/patients") {
+		if (window.location.pathname == "/" && elem.pathname == "/data") {
 			elem.classList.add("is-active");
 		}
 	});
