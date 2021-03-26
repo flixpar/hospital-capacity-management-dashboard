@@ -1,5 +1,6 @@
 import {createCapacityTimeline} from "./capacity_timeline.js";
 import {createTransfersBreakdownPlot} from "./transfers.js";
+import {createAdmissionSimsTableOnly} from "./metrics.js";
 
 
 function handleResponse(response) {
@@ -17,8 +18,8 @@ function handleResponse(response) {
 	createCapacityTimeline(response.icu, false);
 	createTransfersBreakdownPlot(response.icu, false);
 
-	createAdmissionSimsTable(response.icu, "admission-sims-icu-table-container");
-	createAdmissionSimsTable(response.ward, "admission-sims-acute-table-container");
+	createAdmissionSimsTableOnly(response.icu, "admission-sims-icu-table-container");
+	createAdmissionSimsTableOnly(response.ward, "admission-sims-acute-table-container");
 
 	document.getElementById("results-container").remove();
 }
@@ -57,58 +58,6 @@ function computeValue(response, metricName) {
 	}
 
 	return null;
-}
-
-function createAdmissionSimsTable(response, sectionName) {
-	const tableData = response.admission_sims.table;
-
-	let table = document.createElement("table");
-	table.className = "table is-hoverable";
-	document.getElementById(sectionName).appendChild(table);
-
-	let tableHeader = document.createElement("thead");
-	let tableBody = document.createElement("tbody");
-	table.appendChild(tableHeader);
-	table.appendChild(tableBody);
-
-	let tableHeaderRow = document.createElement("tr");
-	tableHeader.appendChild(tableHeaderRow);
-
-	let blank = document.createElement("th");
-	tableHeaderRow.appendChild(blank);
-
-	for (const capacitylevel of tableData.capacitylevel) {
-		let th = document.createElement("th");
-		th.textContent = capacitylevel;
-		tableHeaderRow.appendChild(th);
-	}
-
-	let elem = document.createElement("th");
-	elem.textContent = "Current";
-	tableHeaderRow.appendChild(elem);
-
-	response.config.node_names.forEach((h,i) => {
-		let row = document.createElement("tr");
-		tableBody.appendChild(row);
-
-		let nameEntry = document.createElement("th");
-		nameEntry.textContent = h;
-		row.appendChild(nameEntry);
-
-		const currentLevel = response.admission_sims.current_admissions[i].toFixed(0);
-
-		for (const v of tableData[h]) {
-			let td = document.createElement("td");
-			td.textContent = (v == -1) ? 0 : v;
-			td.style.color = (v < currentLevel) ? "red" : "green";
-			row.appendChild(td);
-		}
-
-		let elem = document.createElement("td");
-		elem.textContent = currentLevel;
-		elem.style.fontWeight = "bold";
-		row.appendChild(elem);
-	});
 }
 
 function ajaxErrorHandler() {

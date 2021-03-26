@@ -11,7 +11,7 @@ import {createOverallLoadPlot, createLoadPlots} from "./loadplots.js";
 import {createTransfersSankey} from "./transfers_sankey.js";
 import {createRidgePlot} from "./ridgeplot.js";
 import {createActivePlot} from "./activeplot.js";
-import {createStatsSummary, createSurgeCapacityMetrics} from "./metrics.js";
+import {createStatsSummary, createSurgeCapacityMetrics, createAdmissionSimsTable} from "./metrics.js";
 import {setupTable, setupTableFilter, setupTableDownloads} from "./tables.js";
 import {generateAllFigureDownloadButtons} from "./figuredl.js";
 
@@ -47,6 +47,8 @@ function handleResponse(response, status, xhr) {
 	createActivePlot(response);
 	createOverallLoadPlot(response);
 	createLoadPlots(response);
+
+	createAdmissionSimsTable(response);
 
 	setupTable(response.summary, true, "summary-table", "Summary Statistics");
 	setupTable(response.full_results, true, "full-table", "Full Results");

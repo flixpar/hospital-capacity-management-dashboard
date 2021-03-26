@@ -147,6 +147,8 @@ function handle_patients_request(
 		use_rounding=false,
 	)
 
+	sims = PatientAllocationResults.admission_sims(data.start_date, data.end_date, scenario, patient_type)
+
 	config = Dict(
 		:start_date => data.start_date,
 		:end_date   => data.end_date,
@@ -173,6 +175,7 @@ function handle_patients_request(
 		:active => permutedims(results.active_patients, (2,1)),
 		:active_null => permutedims(results.active_patients_nosent, (2,1)),
 		:admitted => permutedims(data.admitted, (2,1)),
+		:admission_sims => sims,
 		:total_patients => sum(data.initial) + sum(data.admitted),
 		:config => config,
 	)
