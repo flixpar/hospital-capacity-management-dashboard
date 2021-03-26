@@ -36,6 +36,15 @@ function createCapacityTimeline(response, add_description=true) {
 
 	createTransfersSelect(response);
 
+	const totalSent = d3.sum(response.sent, x => d3.sum(x, y => d3.sum(y)));
+	let sel = document.getElementById("capacitytimeline-transfers-select");
+	if (totalSent < 0.05) {
+		sel.value = false;
+		sel.disabled = true;
+	} else {
+		sel.disabled = false;
+	}
+
 	const fig = makeCapacityTimeline(response, true, true);
 	section.appendChild(fig);
 }
