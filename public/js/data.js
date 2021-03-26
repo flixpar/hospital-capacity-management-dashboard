@@ -1,6 +1,7 @@
 import {makeJHHSDashboard} from "./dashboard.js";
 import {makeCapacityTimeline} from "./capacity_timeline.js";
 import {makeDataCompareFigure} from "./data_compare.js";
+import {generateFigureDownloadButtons} from "./figuredl.js";
 
 
 const RootComponent = {
@@ -49,17 +50,17 @@ app.component("fig", {
 	props: ["type", "args"],
 	template: `<div class="figure-component"></div>`,
 	mounted() {
-		if (this.$root.status != "loaded") {}
+		let fig = null;
+		if (this.$root.status != "loaded") {return;}
 		else if (this.type == "data-compare") {
-			const fig = createDataCompare(this.$root.response, ...this.args);
-			this.$el.appendChild(fig);
+			fig = createDataCompare(this.$root.response, ...this.args);
 		} else if (this.type == "capacity-timeline") {
-			const fig = createCapacityTimeline(this.$root.response);
-			this.$el.appendChild(fig);
+			fig = createCapacityTimeline(this.$root.response);
 		} else if (this.type == "dashboard") {
-			const fig = createJHHSDashboard(this.$root.response);
-			this.$el.appendChild(fig);
+			fig = createJHHSDashboard(this.$root.response);
 		}
+		this.$el.appendChild(fig);
+		generateFigureDownloadButtons(fig, this.type);
 	},
 });
 
@@ -88,18 +89,18 @@ app.component("fig-options", {
 	},
 	methods: {
 		plotFigure() {
+			let fig = null;
 			this.$refs.figContainer.innerHTML = "";
-			if (this.$root.status != "loaded") {}
+			if (this.$root.status != "loaded") {return;}
 			else if (this.type == "data-compare") {
-				const fig = createDataCompare(this.$root.response, this.arg);
-				this.$refs.figContainer.appendChild(fig);
+				fig = createDataCompare(this.$root.response, this.arg);
 			} else if (this.type == "capacity-timeline") {
-				const fig = createCapacityTimeline(this.$root.response, this.arg);
-				this.$refs.figContainer.appendChild(fig);
+				fig = createCapacityTimeline(this.$root.response, this.arg);
 			} else if (this.type == "dashboard") {
-				const fig = createJHHSDashboard(this.$root.response, this.arg);
-				this.$refs.figContainer.appendChild(fig);
+				fig = createJHHSDashboard(this.$root.response, this.arg);
 			}
+			this.$refs.figContainer.appendChild(fig);
+			generateFigureDownloadButtons(fig, this.type);
 		},
 	},
 	watch: {
