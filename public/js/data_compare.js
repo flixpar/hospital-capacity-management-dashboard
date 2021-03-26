@@ -134,7 +134,7 @@ function plotHospital(response, datatype, locIdx, container, svg) {
 function extractData(response, datatype, locIdx) {
 	const realdataX = response.realdata.meta.date_range.map(d => new Date(d));
 	const realdataY = response.realdata[datatype].map(x => x[locIdx]);
-	const realdataData = realdataX.map((x, i) => ({date: x, value: realdataY[i], label: "Real Data"}));
+	const realdataData = realdataX.map((x, i) => ({date: x, value: realdataY[i], label: "Historical Data"}));
 
 	const longtermX = response.longterm.meta.date_range.map(d => new Date(d));
 	const longtermY = response.longterm[datatype].map(x => x[locIdx]);
@@ -327,7 +327,7 @@ function makeDataCompareLegend(svg, response, datatype) {
 		svg = makeLegend(svg, row2Labels, row2Colors, true, "top");
 	}
 
-	const row1Labels = ["Short-Term Forecast", "Long-Term Forecast", "Real Data"];
+	const row1Labels = ["Short-Term Forecast", "Long-Term Forecast", "Historical Data"];
 	const row1Colors = [lineColors.shortterm, lineColors.longterm, lineColors.realdata];
 	svg = makeLegend(svg, row1Labels, row1Colors, true, "top");
 

@@ -9,7 +9,7 @@ const RootComponent = {
 		return {
 			status: "loading",
 			response: null,
-			params: {scenario: "moderate", patienttype: "total"},
+			params: {scenario: "moderate", patienttype: "icu"},
 		}
 	},
 	methods: {},

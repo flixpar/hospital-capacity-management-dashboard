@@ -59,7 +59,7 @@
 					<div class="select is-fullwidth">
 						<select id="form-patient-type" v-model="params.patienttype">
 							<option value="total">All</option>
-							<option value="icu">ICU</option>
+							<option value="icu" selected>ICU</option>
 							<option value="acute">Acute</option>
 						</select>
 					</div>
@@ -70,7 +70,7 @@
 					<div class="select is-fullwidth">
 						<select id="form-scenario" v-model="params.scenario">
 							<option value="optimistic">Optimistic</option>
-							<option value="moderate">Moderate</option>
+							<option value="moderate" selected>Moderate</option>
 						</select>
 					</div>
 				</div>
@@ -98,7 +98,7 @@
 					<fig-options type="data-compare" :options="[{value: 'active', text: 'Occupancy'}, {value: 'admitted', text: 'Admissions'}]" :show-options="params.patienttype == 'total'"></fig-options>
 				</result-section>
 				<result-section title="Capacity Timeline" section-id="capacitytimeline">
-					<fig-options type="capacity-timeline" :options="[{value: 'realdata', text: 'Real Data'}, {value: 'shortterm', text: 'Short-Term Forecast'}, {value: 'longterm', text: 'Long-Term Forecast'}]"></fig-options>
+					<fig-options type="capacity-timeline" :options="[{value: 'realdata', text: 'Historical Data'}, {value: 'shortterm', text: 'Short-Term Forecast'}, {value: 'longterm', text: 'Long-Term Forecast'}]"></fig-options>
 				</result-section>
 			</div>
 			<div id="error-area" class="column is-10 is-offset-1 is-hidden" v-else>
