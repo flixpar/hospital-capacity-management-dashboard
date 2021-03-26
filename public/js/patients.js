@@ -175,6 +175,18 @@ function setDefaultTransferBudget() {
 setDefaultTransferBudget();
 document.getElementById("form-patient-type").addEventListener("change", setDefaultTransferBudget);
 
+function constrainPatientType() {
+	const scenario = document.getElementById("form-scenario").value;
+	if (scenario == "shortterm") {
+		document.getElementById("form-patient-type").value = "all";
+		document.getElementById("form-patient-type").disabled = true;
+	} else {
+		document.getElementById("form-patient-type").disabled = false;
+	}
+}
+constrainPatientType();
+document.getElementById("form-scenario").addEventListener("change", constrainPatientType);
+
 function validateForm() {
 	const data_start_date = "2020-03-25";
 	const data_end_date   = "2021-06-30";
@@ -188,7 +200,14 @@ function validateForm() {
 		alert(`Date selection outside of valid range. Valid date range for ${region} is ${valid_range_str}.`);
 	}
 
-	return dates_valid;
+	const scenario = document.getElementById("form-scenario").value;
+	const patient_type = document.getElementById("form-patient-type").value;
+	const patient_type_valid = !(scenario == "shortterm" && patient_type != "all");
+	if (!patient_type_valid) {
+		alert("Scenario Short-Term only available for patient type All.")
+	}
+
+	return dates_valid && patient_type_valid;
 }
 
 function sendUpdateQuery() {
