@@ -38,16 +38,15 @@ function handleResponse(response, status, xhr) {
 	createMap(response, "overflow_dynamic", "transfers");
 
 	createJHHSDashboard(response);
-	createTransfersBreakdownPlot(response);
 	createCapacityTimeline(response);
 
+	createTransfersSankey(response);
+	createTransfersBreakdownPlot(response);
+
 	createAdmittedPlot(response);
-	createDischargedPlot(response);
 	createActivePlot(response);
 	createOverallLoadPlot(response);
 	createLoadPlots(response);
-	createTransfersSankey(response);
-	createRidgePlot(response);
 
 	setupTable(response.summary, true, "summary-table", "Summary Statistics");
 	setupTable(response.full_results, true, "full-table", "Full Results");
@@ -63,13 +62,13 @@ function handleResponse(response, status, xhr) {
 function makeSections() {
 	const sectionInfo = [
 		{title: "Info",                                   identifier: "casestudy-info",      showDefault: true},
-		{title: "Main Results",                           identifier: "results-dashboard",   showDefault: true},
+		{title: "Occupancy Timeline",                     identifier: "results-dashboard",   showDefault: true},
+		{title: "Recommended Transfers",                  identifier: "results-transfers",   showDefault: true},
 		{title: "Metrics",                                identifier: "results-metrics",     showDefault: true},
-		{title: "Admissions/Discharges",                  identifier: "results-admdis",      showDefault: true},
+		{title: "Admissions",                             identifier: "results-admdis",      showDefault: true},
 		{title: "Required Surge Capacity Map",            identifier: "results-maps",        showDefault: true},
 		{title: "System Load",                            identifier: "results-totalload",   showDefault: true},
 		{title: "Hospital Loads",                         identifier: "results-load",        showDefault: true},
-		{title: "Patient Transfer Flows",                 identifier: "results-transfers",   showDefault: true},
 		{title: "Number of Active COVID Patients",        identifier: "results-active",      showDefault: false},
 		{title: "Raw Results",                            identifier: "results-raw",         showDefault: false},
 	]

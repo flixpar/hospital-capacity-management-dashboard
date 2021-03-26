@@ -40,7 +40,7 @@ function createAdmittedPlot(response, add_description=true) {
 	fig.setAttribute("figure-name", "admissions");
 	fig.classList.add("figure");
 
-	section.appendChild(document.createElement("hr"));
+	// section.appendChild(document.createElement("hr"));
 }
 
 function makeAdmittedPlot(response) {
