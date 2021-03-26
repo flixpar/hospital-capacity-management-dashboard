@@ -212,10 +212,20 @@ function results_active_patients(
 end
 
 function admission_sims(start_date, end_date, scenario, bedtype)
-	data = deserialize("data/data_jhhs.jlser")
+
+	shortterm = (scenario == :shortterm)
+	bedtype = (bedtype == :all) ? :allbeds : bedtype
+	data = shortterm ? deserialize("data/data_jhhs_shortterm.jlser") : deserialize("data/data_jhhs.jlser")
+	if shortterm
+		start_date = data.start_date
+		end_date = data.end_date
+	end
 
 	casesdata = data.casesdata[(scenario, bedtype)]
 	los_dist  = casesdata.los_dist
+
+	histdata = deserialize("data/data_jhhs.jlser")
+	histcasesdata = histdata.casesdata[(:moderate, bedtype)]
 
 	function compute_active(initial, admitted)
 		T = length(admitted)
@@ -234,12 +244,14 @@ function admission_sims(start_date, end_date, scenario, bedtype)
 	start_date_t = (start_date - data.start_date).value + 1
 	T = (end_date - start_date).value + 1
 
+	hist_start_date_t = (start_date - histdata.start_date).value + 1
+
 	allowed_admissions_data = []
 	for hospital in data.location_names, capacitylevel in data.capacity_names
 		locIdx = findfirst(data.location_names .== hospital)
 		capIdx = findfirst(data.capacity_names .== capacitylevel)
 
-		initial  = casesdata.active[locIdx, start_date_t-1]
+		initial  = histcasesdata.active[locIdx, max(1,hist_start_date_t-1)]
 		capacity = casesdata.capacity[locIdx, capIdx]
 
 		allowed_admit = 0
@@ -259,7 +271,7 @@ function admission_sims(start_date, end_date, scenario, bedtype)
 	allowed_admissions = DataFrame(allowed_admissions_data)
 	allowed_admissions_wide = unstack(allowed_admissions, :capacitylevel, :hospital, :allowed_admit_perday_mean)
 
-	recent_admissions = casesdata.admitted[:,(start_date_t-7):(start_date_t-1)]
+	recent_admissions = histcasesdata.admitted[:,max(1,hist_start_date_t-7):max(1,hist_start_date_t-1)]
 	current_admissions = sum(recent_admissions, dims=2) ./ 7
 
 	return (
