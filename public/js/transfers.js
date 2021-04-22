@@ -182,7 +182,7 @@ function makeTransfersBreakdownSubplot(svg, response, locIdx, plotSize) {
 			.join("rect")
 				.attr("x", d => x(d.date))
 				.attr("y", d => y(d[1]))
-				.attr("height", d => y(d[0]) - y(d[1]))
+				.attr("height", d => Math.max(0, y(d[0]) - y(d[1])))
 				.attr("width", binWidth)
 				.attr("fill", d => d.color)
 			.on("mouseover", (e,d) => tooltip.show(d, e))
