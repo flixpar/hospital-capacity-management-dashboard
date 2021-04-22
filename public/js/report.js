@@ -19,7 +19,7 @@ function handleResponse(response) {
 	createTransfersBreakdownPlot(response.icu, false);
 
 	createAdmissionSimsTableOnly(response.icu, "admission-sims-icu-table-container");
-	createAdmissionSimsTableOnly(response.ward, "admission-sims-acute-table-container");
+	createAdmissionSimsTableOnly(response.acute, "admission-sims-acute-table-container");
 
 	document.getElementById("results-container").remove();
 }
@@ -54,7 +54,7 @@ function computeValue(response, metricName) {
 	} else if (metricName == "TRANSFERBUDGET-ICU") {
 		return response.icu.transfer_budget;
 	} else if (metricName == "TRANSFERBUDGET-ACUTE") {
-		return response.ward.transfer_budget;
+		return response.acute.transfer_budget;
 	}
 
 	return null;
