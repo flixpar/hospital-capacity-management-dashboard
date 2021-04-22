@@ -209,9 +209,10 @@ function toGraph(response, excludeSelf=false) {
 	return {nodes, links}
 }
 
-function checkTransfers(response) {
-	const totalSent = d3.sum(response.sent, x => d3.sum(x, y => d3.sum(y)));
-	return totalSent > 0;
+function checkTransfers(response, thresh=0.5) {
+	const totalSentEnough = d3.sum(response.sent, x => d3.sum(x, y => d3.sum(y))) > thresh;
+	const anySentEnough = !response.sent.every(z => z.every(x => d3.sum(x) < thresh));
+	return totalSentEnough && anySentEnough;
 }
 
 class TransfersSankeyTooltip {
