@@ -48,7 +48,7 @@ function handleResponse(response, status, xhr) {
 	createOverallLoadPlot(response);
 	createLoadPlots(response);
 
-	createAdmissionSimsTable(response);
+	createAdmissionSimsTable(response, false);
 
 	setupTable(response.summary, true, "summary-table", "Summary Statistics");
 	setupTable(response.full_results, true, "full-table", "Full Results");

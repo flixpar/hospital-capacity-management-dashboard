@@ -196,7 +196,7 @@ function createMetricsCapacitySelect(rawdata) {
 	section.appendChild(selectContainer);
 }
 
-function createAdmissionSimsTable(response) {
+function createAdmissionSimsTable(response, includeCurrent=true) {
 	const sectionName = "section-results-metrics";
 
 	let title = document.createElement("p");
@@ -204,12 +204,12 @@ function createAdmissionSimsTable(response) {
 	title.style.fontWeight = "bold";
 	document.getElementById(sectionName).appendChild(title);
 
-	let table = createAdmissionSimsTableOnly(response, sectionName);
+	let table = createAdmissionSimsTableOnly(response, sectionName, includeCurrent);
 	table.style.marginLeft = "auto";
 	table.style.marginRight = "auto";
 }
 
-function createAdmissionSimsTableOnly(response, sectionName) {
+function createAdmissionSimsTableOnly(response, sectionName, includeCurrent=true) {
 	const tableData = response.admission_sims.table;
 
 	let table = document.createElement("table");
@@ -233,9 +233,11 @@ function createAdmissionSimsTableOnly(response, sectionName) {
 		tableHeaderRow.appendChild(th);
 	}
 
-	let elem = document.createElement("th");
-	elem.textContent = "Current";
-	tableHeaderRow.appendChild(elem);
+	if (includeCurrent) {
+		let elem = document.createElement("th");
+		elem.textContent = "Current";
+		tableHeaderRow.appendChild(elem);
+	}
 
 	response.config.node_names.forEach((h,i) => {
 		let row = document.createElement("tr");
@@ -254,10 +256,12 @@ function createAdmissionSimsTableOnly(response, sectionName) {
 			row.appendChild(td);
 		}
 
-		let elem = document.createElement("td");
-		elem.textContent = currentLevel;
-		elem.style.fontWeight = "bold";
-		row.appendChild(elem);
+		if (includeCurrent) {
+			let elem = document.createElement("td");
+			elem.textContent = currentLevel;
+			elem.style.fontWeight = "bold";
+			row.appendChild(elem);
+		}
 	});
 
 	return table;
