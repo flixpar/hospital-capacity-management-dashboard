@@ -6,6 +6,8 @@ using Dates
 using Distributions
 using Serialization
 
+include("DataLoader.jl")
+
 
 function results_all(
 		sent::Array{<:Real,3},
@@ -211,54 +213,40 @@ function results_active_patients(
 	return active, active_null
 end
 
-function admission_sims(start_date, end_date, scenario, bedtype)
+function compute_active_null(initial, admitted, los_dist)
+	T = length(admitted)
+	discharged = initial .* (pdf.(los_dist, 0:T-1))
+	L = 1.0 .- cdf.(los_dist, 0:T)
+	active = [
+		(
+			initial
+			- sum(discharged[1:t])
+			+ sum(L[t-t₁+1] * admitted[t₁] for t₁ in 1:t)
+		) for t in 1:T
+	]
+	return active
+end
 
-	shortterm = (scenario == :shortterm)
-	bedtype = (bedtype == :all) ? :allbeds : bedtype
-	data = shortterm ? deserialize("data/data_jhhs_shortterm.jlser") : deserialize("data/data_jhhs.jlser")
-	if shortterm
-		start_date = data.start_date
-		end_date = data.end_date
-	end
+function admission_sims(start_date, end_date, scenario, patient_type)
 
-	casesdata = data.casesdata[(scenario, bedtype)]
-	los_dist  = casesdata.los_dist
+	data = DataLoader.load_jhhs(scenario, patient_type, start_date-Day(7), start_date-Day(1))
 
-	histdata = deserialize("data/data_jhhs.jlser")
-	histcasesdata = histdata.casesdata[(:moderate, bedtype)]
-
-	function compute_active(initial, admitted)
-		T = length(admitted)
-		discharged = initial .* (pdf.(los_dist, 0:T-1))
-		L = 1.0 .- cdf.(los_dist, 0:T)
-		active = [
-			(
-				initial
-				- sum(discharged[1:t])
-				+ sum(L[t-t₁+1] * admitted[t₁] for t₁ in 1:t)
-			) for t in 1:T
-		]
-		return active
-	end
-
-	start_date_t = (start_date - data.start_date).value + 1
+	initial = data.active[:,end]
+	capacity = data.capacity
+	los_dist = DataLoader.los_dist_default(patient_type)
 	T = (end_date - start_date).value + 1
 
-	hist_start_date_t = (start_date - histdata.start_date).value + 1
-
 	allowed_admissions_data = []
-	for hospital in data.location_names, capacitylevel in data.capacity_names
-		locIdx = findfirst(data.location_names .== hospital)
-		capIdx = findfirst(data.capacity_names .== capacitylevel)
+	for (locIdx, hospital) in enumerate(data.node_names), (capIdx, capacitylevel) in enumerate(data.capacity_names)
 
-		initial  = histcasesdata.active[locIdx, max(1,hist_start_date_t-1)]
-		capacity = casesdata.capacity[locIdx, capIdx]
+		i = initial[locIdx]
+		c = capacity[locIdx, capIdx]
 
 		allowed_admit = 0
 		while true
 			admitted_sim = fill(allowed_admit, T)
-			active_sim = compute_active(initial, admitted_sim)
-			if maximum(active_sim) > capacity
+			active_sim = compute_active_null(i, admitted_sim, los_dist)
+			if maximum(active_sim) > c
 				allowed_admit -= 1
 				break
 			else
@@ -266,13 +254,12 @@ function admission_sims(start_date, end_date, scenario, bedtype)
 			end
 		end
 
-		push!(allowed_admissions_data, (;hospital, bedtype, capacitylevel, allowed_admit_perday_mean=allowed_admit))
+		push!(allowed_admissions_data, (;hospital, bedtype=patient_type, capacitylevel, allowed_admit_perday_mean=allowed_admit))
 	end
 	allowed_admissions = DataFrame(allowed_admissions_data)
 	allowed_admissions_wide = unstack(allowed_admissions, :capacitylevel, :hospital, :allowed_admit_perday_mean)
 
-	recent_admissions = histcasesdata.admitted[:,max(1,hist_start_date_t-7):max(1,hist_start_date_t-1)]
-	current_admissions = sum(recent_admissions, dims=2) ./ 7
+	current_admissions = sum(data.admitted, dims=2) ./ 7
 
 	return (
 		table = allowed_admissions_wide,

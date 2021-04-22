@@ -33,7 +33,7 @@ function handle_patients_request(
 	@info "Handle Patients Request"
 	@info "Scenario: $(scenario), Patient type: $(patient_type)"
 
-	@assert patient_type in [:ward, :icu, :all]
+	@assert patient_type in [:acute, :icu, :total]
 
 	data = load_jhhs(scenario, patient_type, start_date, end_date)
 	default_capacity_level = 1
@@ -158,7 +158,7 @@ function handle_patients_request(
 		:node_locations    => data.node_locations,
 		:capacity_names => data.capacity_names,
 		:node_type => "hospital",
-		:region    => (region_type="hospital_system", region_name="JHHS", region_fullname="Johns Hopkins Health System"),
+		:region    => data.region,
 		:extent    => data.extent,
 		:capacity_util => capacity_util,
 		:default_capacity_level => default_capacity_level,
@@ -194,7 +194,7 @@ function generate_report()
 	end_date = today() + Month(1)
 
 	responses = Dict()
-	for patient_type in [:icu, :ward]
+	for patient_type in [:icu, :acute]
 		tfr_budget = (patient_type == :icu) ? "15" : "25"
 		transfer_budget_dict = Dict{String,Any}(h => tfr_budget for h in ["bmc", "hcgh", "jhh", "sh", "smh", "total"])
 		r = handle_patients_request(
@@ -214,13 +214,12 @@ function generate_report()
 		responses[patient_type] = r
 	end
 
-	for patient_type in [:icu, :ward]
+	for patient_type in [:icu, :acute]
 		sims = PatientAllocationResults.admission_sims(start_date, end_date, scenario, patient_type)
 		responses[patient_type][:admission_sims] = sims
 	end
 
 	responses[:meta] = (;
-		forecast_date = "2021-01-21",
 		scenario,
 		objective,
 		constrain_integer,
