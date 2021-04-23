@@ -460,7 +460,8 @@ def save_output(name, predictions):
 	df = pd.DataFrame(pd.Series(predictions["BMC"]["dates"][-1],name = "date")).reset_index()
 	for hosp in hospital_names_abr:
 		df[hosp] = predictions[hosp]["preds"][-1]
-	df.to_csv(OUTPUT_PATH+"occupancy"+name.lower()+".csv",index=False)
+	os.makedirs(OUTPUT_PATH, exist_ok=True)
+	df.to_csv(OUTPUT_PATH+"occupancy-"+name.lower()+".csv",index=False)
 
 
 def ensemble(occupancy):

@@ -476,4 +476,5 @@ for hosp, training_target in training_target_sets.items():
 
 df = pd.DataFrame(hosp_corrected_forecast)
 df = df.set_index(pd.Index([current_date+datetime.timedelta(days=i) for i in range(len(df))]))
+os.makedirs(OUTPUT_PATH, exist_ok=True)
 df.to_csv(OUTPUT_PATH+"admissions-total.csv")
