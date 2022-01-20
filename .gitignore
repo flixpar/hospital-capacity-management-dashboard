@@ -17,6 +17,7 @@ session/*
 .vscode
 
 .ipynb_checkpoints/
+.virtual_documents/
 
 target/
 backup/

@@ -3,6 +3,9 @@ using Dates
 using StringEncodings
 using DataFrames
 
+include("util.jl")
+
+
 function format_data()
 
 	data_date = replace(string(latest_data()), "-" => "_")
@@ -11,7 +14,7 @@ function format_data()
 
 	function load_active()
 
-		census_total_data = DataFrame(CSV.File(open(read, "../rawdata/realdata_$(data_date)/CensusWorksheet.csv", enc"UTF-16")))
+		census_total_data = DataFrame(CSV.File(open(read, "../rawdata/realdata_$(data_date)/Occupancy.csv", enc"UTF-16")))
 		active_total_data = filter(row -> !ismissing(row.CalcInstitutionName) && row.CalcInstitutionName != "JOHNS HOPKINS ALL CHILDREN'S HOSPITAL", census_total_data)
 		active_total_data = select(active_total_data,
 			:CalcInstitutionName => (xs -> [string(split.(x, " ")[1]) for x in xs]) => :hospital,
@@ -19,7 +22,7 @@ function format_data()
 			:CensusCount => :active_total,
 		)
 
-		census_icu_data = DataFrame(CSV.File(open(read, "../rawdata/realdata_$(data_date)/ICUCensus.csv", enc"UTF-16")))
+		census_icu_data = DataFrame(CSV.File(open(read, "../rawdata/realdata_$(data_date)/OccupancyICU.csv", enc"UTF-16")))
 		active_icu_data = filter(row -> !ismissing(row.CalcInstitutionName) && row.CalcInstitutionName != "JOHNS HOPKINS ALL CHILDREN'S HOSPITAL", census_icu_data)
 		active_icu_data = select(active_icu_data,
 			:CalcInstitutionName => (xs -> [string(split.(x, " ")[1]) for x in xs]) => :hospital,
@@ -27,7 +30,7 @@ function format_data()
 			:CensusICUCount => :active_icu,
 		)
 
-		census_flagged_data = DataFrame(CSV.File(open(read, "../rawdata/realdata_$(data_date)/CensusWorksheetCOVIDActive.csv", enc"UTF-16")))
+		census_flagged_data = DataFrame(CSV.File(open(read, "../rawdata/realdata_$(data_date)/OccupancyActive.csv", enc"UTF-16")))
 		active_flagged_data = filter(row -> !ismissing(row.CalcInstitutionName) && row.CalcInstitutionName != "JOHNS HOPKINS ALL CHILDREN'S HOSPITAL", census_flagged_data)
 		active_flagged_data = select(active_flagged_data,
 			:CalcInstitutionName => (xs -> [string(split.(x, " ")[1]) for x in xs]) => :hospital,
@@ -35,7 +38,15 @@ function format_data()
 			:CensusCount => :active_total_flagged,
 		)
 
-		active_data = outerjoin(active_total_data, active_flagged_data, active_icu_data, on=[:hospital, :date])
+		census_icu_flagged_data = DataFrame(CSV.File(open(read, "../rawdata/realdata_$(data_date)/OccupancyICUActive.csv", enc"UTF-16")))
+		census_icu_flagged_data = filter(row -> !ismissing(row.CalcInstitutionName) && row.CalcInstitutionName != "JOHNS HOPKINS ALL CHILDREN'S HOSPITAL", census_icu_data)
+		census_icu_flagged_data = select(census_icu_flagged_data,
+			:CalcInstitutionName => (xs -> [string(split.(x, " ")[1]) for x in xs]) => :hospital,
+			"Day of adate" => (x -> Date.(x, dateformat"U d, Y")) => :date,
+			:CensusICUCount => :active_icu_flagged,
+		)
+
+		active_data = outerjoin(active_total_data, active_flagged_data, active_icu_data, census_icu_flagged_data, on=[:hospital, :date])
 		for col in names(active_data)
 			active_data[!,col] = coalesce.(active_data[!,col], 0)
 		end
@@ -44,8 +55,11 @@ function format_data()
 		return active_data
 	end
 
-	function load_admissions(hname)
-		adm = DataFrame(CSV.File(open(read, "../rawdata/realdata_$(data_date)/$(hname)CumAdmits.csv", enc"UTF-16")))
+	function load_admissions(hname, icu)
+		fn_ext = icu ? "ICU" : ""
+		colname = icu ? :admissions_icu : :admissions_all
+
+		adm = DataFrame(CSV.File(open(read, "../rawdata/realdata_$(data_date)/$(hname)Admits$(fn_ext).csv", enc"UTF-16")))
 		adm = stack(adm, r"adate*")
 
 		z = maximum([x for x in names(adm) if contains(x, "Column")])
@@ -60,7 +74,7 @@ function format_data()
 		adm.admissions = [parse(Float64, x) for x in adm.admissions]
 		adm.admissions = [Int(x) for x in adm.admissions]
 
-		rename!(adm, :admissions => :admissions_total)
+		rename!(adm, :admissions => colname)
 
 		return adm
 	end
@@ -68,7 +82,9 @@ function format_data()
 	function load_admissions()
 		data = []
 		for hname in hospitals
-			df = load_admissions(hname)
+			df_a = load_admissions(hname, false)
+			df_b = load_admissions(hname, true)
+			df = outerjoin(df_a, df_b, on=:date)
 			insertcols!(df, 1, :hospital => fill(hname, nrow(df)))
 			push!(data, df)
 		end
@@ -88,4 +104,8 @@ function format_data()
 	combined_data |> CSV.write("../data/jhhs_realdata_$(data_date).csv")
 
 	return
+end
+
+if abspath(PROGRAM_FILE) == @__FILE__
+	format_data()
 end
