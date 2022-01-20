@@ -69,8 +69,9 @@ route("/api/report", method=GET) do
 end
 
 route("/api/data", method=GET) do
-	patienttype = @params(:patienttype)
-	scenario = @params(:scenario)
+	paramsdata = getpayload()
+	patienttype = get(paramsdata, :patienttype, "icu")
+	scenario = get(paramsdata, :scenario, "moderate")
 	response = get_all_data(patienttype, scenario)
 	return json(response)
 end
