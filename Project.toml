@@ -15,4 +15,4 @@ MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 MbedTLS = "739be429-bea8-5141-9913-cc70e7f3736d"
 
 [compat]
-julia = "1.4"
+julia = "1.6"
