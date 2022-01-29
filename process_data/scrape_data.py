@@ -80,7 +80,7 @@ def download_admissions(driver, outfolder):
 	WebDriverWait(driver, 30).until(ec.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "#viz > iframe")))
 
 	WebDriverWait(driver, 20).until(ec.all_of(
-		ec.presence_of_element_located((By.ID, "tabZoneId70")),
+		ec.presence_of_element_located((By.ID, "tabZoneId69")),
 		ec.presence_of_element_located((By.ID, "dijit_form_ToggleButton_0_label"))
 	))
 

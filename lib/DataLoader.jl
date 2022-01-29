@@ -55,7 +55,7 @@ function load_jhhs(
 	elseif start_date in longterm_range && end_date in longterm_range && scenario != :shortterm
 		data = longterm
 	else
-		error("Invalid data loading parameters.")
+		error("Invalid data loading parameters: $(scenario), $(patient_type), $(start_date), $(end_date)")
 	end
 
 	day0_t = findfirst(==(start_date-Day(1)), data.dates)

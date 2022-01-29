@@ -21,9 +21,11 @@ session/*
 
 target/
 backup/
+*.bak
 
 rawdata/
 
 *.lp
 
 analysis/
+tmp/
