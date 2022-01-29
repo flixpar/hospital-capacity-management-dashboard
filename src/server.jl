@@ -1,8 +1,8 @@
 using Genie
 using Genie.Router
 using Genie.Requests
-using Genie.Renderer.Json
 
+using JSON
 using Dates
 
 push!(LOAD_PATH, normpath(@__DIR__, "..", "src"));
@@ -43,8 +43,8 @@ route("/api/patients", method=POST) do
 	scenario = str_to_symbol(input["scenario"])
 	patient_type = str_to_symbol(input["patient_type"])
 	objective = str_to_symbol(input["objective"])
-	transfer_budget = input["transferbudget"]
-	surge_preferences = input["surgepreferences"]
+	transfer_budget = Dict(input["transferbudget"])
+	surge_preferences = Dict(input["surgepreferences"])
 	capacity_util = parse(Float64, input["utilization"])
 	uncertainty_level = str_to_symbol(input["uncertaintylevel"])
 	los = input["los"]

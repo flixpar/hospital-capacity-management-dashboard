@@ -139,7 +139,7 @@ function results_complete(
 end
 
 function results_sentmatrix_table(sent::Array{<:Real,3}, locations::Array{String,1})
-	sent_matrix = DataFrame(sum(sent, dims=3)[:,:,1])
+	sent_matrix = DataFrame(sum(sent, dims=3)[:,:,1], :auto)
 	rename!(sent_matrix, Symbol.(locations))
 	# insertcols!(sent_matrix, 1, :state => locations)
 	return sent_matrix
@@ -149,7 +149,7 @@ function results_sentmatrix_vis(sent::Array{<:Real,3}, initial_patients::Array{<
 		admitted_patients::Array{<:Real,2}, locations::Array{String,1})
 	selfedges = initial_patients + sum(admitted_patients, dims=2)[:] - sum(sent, dims=[2,3])[:]
 	sent_vis_matrix = sum(sent, dims=3)[:,:,1] + diagm(selfedges)
-	sent_vis_matrix = DataFrame(sent_vis_matrix)
+	sent_vis_matrix = DataFrame(Matrix(sent_vis_matrix), :auto)
 	rename!(sent_vis_matrix, Symbol.(locations))
 	return sent_vis_matrix
 end
@@ -157,7 +157,7 @@ end
 function results_netsent(sent::Array{<:Real,3}, start_date::Date)
 	N, _, T = size(sent)
 	net_sent = sum(sent, dims=2)[:,1,:] .- sum(sent, dims=1)[1,:,:]
-	net_sent = DataFrame(Matrix(net_sent))
+	net_sent = DataFrame(Matrix(net_sent), :auto)
 	rename!(net_sent, Symbol.(start_date .+ Dates.Day.(0:T-1)))
 	return net_sent
 end

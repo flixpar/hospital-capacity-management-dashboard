@@ -71,6 +71,7 @@ function sendUpdateQuery() {
 	$.ajax({
 		url: "/api/report",
 		type: "get",
+		dataType: "json",
 		success: handleResponse,
 		error: ajaxErrorHandler,
 	});
