@@ -149,9 +149,11 @@ function ajaxErrorHandler() {
 }
 
 function setDefaultDates() {
-	let start_date = new Date();
-	let end_date   = new Date();
-	end_date.setMonth(end_date.getMonth() + 2);
+	// let start_date = new Date();
+	// let end_date   = new Date();
+	// end_date.setMonth(end_date.getMonth() + 2);
+	const start_date = new Date("2021-12-15");
+	const end_date = new Date("2022-02-15");
 	document.getElementById("form-start-date").value = start_date.toISOString().slice(0, 10);
 	document.getElementById("form-end-date").value = end_date.toISOString().slice(0, 10);
 }
@@ -191,7 +193,7 @@ document.getElementById("form-scenario").addEventListener("change", constrainPat
 
 function validateForm() {
 	const data_start_date = "2020-03-25";
-	const data_end_date   = "2021-06-30";
+	const data_end_date   = "2022-02-16";
 
 	const start_date = new Date(Date.parse(document.getElementById("form-start-date").value));
 	const end_date   = new Date(Date.parse(document.getElementById("form-end-date").value));

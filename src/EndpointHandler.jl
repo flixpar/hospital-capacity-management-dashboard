@@ -190,8 +190,10 @@ function generate_report()
 	capacity_util = 0.93
 	uncertainty_level = :default
 	los_param = "default_dist"
-	start_date = today()
-	end_date = today() + Month(1)
+	# start_date = today()
+	# end_date = today() + Month(1)
+	start_date = Date(2021, 1, 25)
+	end_date = Date(2021, 2, 25)
 
 	responses = Dict()
 	for patient_type in [:icu, :acute]
