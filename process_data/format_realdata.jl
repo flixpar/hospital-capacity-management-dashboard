@@ -14,52 +14,52 @@ function format_data()
 
 	function load_active()
 
-		census_total_data = DataFrame(CSV.File(open(read, "../rawdata/realdata_$(data_date)/Occupancy.csv", enc"UTF-16")))
+		census_total_data = DataFrame(CSV.File(open(read, "../rawdata/realdata/realdata_$(data_date)/Occupancy.csv", enc"UTF-16")))
 		active_total_data = filter(row -> !ismissing(row.CalcInstitutionName) && row.CalcInstitutionName != "JOHNS HOPKINS ALL CHILDREN'S HOSPITAL", census_total_data)
 		active_total_data = select(active_total_data,
 			:CalcInstitutionName => (xs -> [string(split.(x, " ")[1]) for x in xs]) => :hospital,
 			"Day of adate" => (x -> Date.(x, dateformat"U d, Y")) => :date,
-			:CensusCount => :active_total,
+			:CensusCount => :occupancy_combined,
 		)
 
-		census_icu_data = DataFrame(CSV.File(open(read, "../rawdata/realdata_$(data_date)/OccupancyICU.csv", enc"UTF-16")))
+		census_icu_data = DataFrame(CSV.File(open(read, "../rawdata/realdata/realdata_$(data_date)/OccupancyICU.csv", enc"UTF-16")))
 		active_icu_data = filter(row -> !ismissing(row.CalcInstitutionName) && row.CalcInstitutionName != "JOHNS HOPKINS ALL CHILDREN'S HOSPITAL", census_icu_data)
 		active_icu_data = select(active_icu_data,
 			:CalcInstitutionName => (xs -> [string(split.(x, " ")[1]) for x in xs]) => :hospital,
 			"Day of adate" => (x -> Date.(x, dateformat"U d, Y")) => :date,
-			:CensusICUCount => :active_icu,
+			:CensusICUCount => :occupancy_icu,
 		)
 
-		census_flagged_data = DataFrame(CSV.File(open(read, "../rawdata/realdata_$(data_date)/OccupancyActive.csv", enc"UTF-16")))
+		census_flagged_data = DataFrame(CSV.File(open(read, "../rawdata/realdata/realdata_$(data_date)/OccupancyActive.csv", enc"UTF-16")))
 		active_flagged_data = filter(row -> !ismissing(row.CalcInstitutionName) && row.CalcInstitutionName != "JOHNS HOPKINS ALL CHILDREN'S HOSPITAL", census_flagged_data)
 		active_flagged_data = select(active_flagged_data,
 			:CalcInstitutionName => (xs -> [string(split.(x, " ")[1]) for x in xs]) => :hospital,
 			"Day of adate" => (x -> Date.(x, dateformat"U d, Y")) => :date,
-			:CensusCount => :active_total_flagged,
+			:CensusCount => :occupancy_combined_flagged,
 		)
 
-		census_icu_flagged_data = DataFrame(CSV.File(open(read, "../rawdata/realdata_$(data_date)/OccupancyICUActive.csv", enc"UTF-16")))
+		census_icu_flagged_data = DataFrame(CSV.File(open(read, "../rawdata/realdata/realdata_$(data_date)/OccupancyICUActive.csv", enc"UTF-16")))
 		census_icu_flagged_data = filter(row -> !ismissing(row.CalcInstitutionName) && row.CalcInstitutionName != "JOHNS HOPKINS ALL CHILDREN'S HOSPITAL", census_icu_data)
 		census_icu_flagged_data = select(census_icu_flagged_data,
 			:CalcInstitutionName => (xs -> [string(split.(x, " ")[1]) for x in xs]) => :hospital,
 			"Day of adate" => (x -> Date.(x, dateformat"U d, Y")) => :date,
-			:CensusICUCount => :active_icu_flagged,
+			:CensusICUCount => :occupancy_icu_flagged,
 		)
 
 		active_data = outerjoin(active_total_data, active_flagged_data, active_icu_data, census_icu_flagged_data, on=[:hospital, :date])
 		for col in names(active_data)
 			active_data[!,col] = coalesce.(active_data[!,col], 0)
 		end
-		active_data.active_acute = active_data.active_total - active_data.active_icu
+		active_data.occupancy_acute = active_data.occupancy_combined - active_data.occupancy_icu
 
 		return active_data
 	end
 
 	function load_admissions(hname, icu)
 		fn_ext = icu ? "ICU" : ""
-		colname = icu ? :admissions_icu : :admissions_all
+		colname = icu ? :admissions_icu : :admissions_combined
 
-		adm = DataFrame(CSV.File(open(read, "../rawdata/realdata_$(data_date)/$(hname)Admits$(fn_ext).csv", enc"UTF-16")))
+		adm = DataFrame(CSV.File(open(read, "../rawdata/realdata/realdata_$(data_date)/$(hname)Admits$(fn_ext).csv", enc"UTF-16")))
 		adm = stack(adm, r"adate*")
 
 		z = maximum([x for x in names(adm) if contains(x, "Column")])
@@ -101,7 +101,7 @@ function format_data()
 	end
 	sort!(combined_data, [:hospital, :date])
 
-	combined_data |> CSV.write("../data/jhhs_realdata_$(data_date).csv")
+	combined_data |> CSV.write("../data/realdata/jhhs_realdata_$(data_date).csv")
 
 	return
 end
