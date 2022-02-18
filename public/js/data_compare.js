@@ -61,7 +61,7 @@ function plotHospital(response, datatype, locIdx, container, svg) {
 		.style("font-family", font)
 		.style("font-size", fontSizes.axis)
 		.call(d3.axisBottom(xScale)
-			.ticks(d3.utcWeek.every(8))
+			.ticks(d3.utcWeek.every(12))
 			.tickSizeOuter(4)
 			.tickFormat(d3.utcFormat("%Y-%m-%d"))
 		)
@@ -136,15 +136,27 @@ function extractData(response, datatype, locIdx) {
 	const realdataY = response.realdata[datatype].map(x => x[locIdx]);
 	const realdataData = realdataX.map((x, i) => ({date: x, value: realdataY[i], label: "Historical Data"}));
 
-	const longtermX = response.longterm.meta.date_range.map(d => new Date(d));
-	const longtermY = response.longterm[datatype].map(x => x[locIdx]);
-	const longtermData = longtermX.map((x, i) => ({date: x, value: longtermY[i], label: "Long-Term Forecast"}));
+	let allDates = realdataX;
+	let maxY = d3.max(realdataY);
 
-	const shorttermX = response.shortterm.meta.date_range.map(d => new Date(d));
-	const shorttermY = response.shortterm[datatype].map(x => x[locIdx]);
-	const shorttermData = shorttermX.map((x, i) => ({date: x, value: shorttermY[i], label: "Short-Term Forecast"}));
+	let longtermData = null;
+	if (response.longterm.meta.available) {
+		const longtermX = response.longterm.meta.date_range.map(d => new Date(d));
+		const longtermY = response.longterm[datatype].map(x => x[locIdx]);
+		longtermData = longtermX.map((x, i) => ({date: x, value: longtermY[i], label: "Long-Term Forecast"}));
+		allDates = allDates.concat(longtermX);
+		maxY = Math.max(maxY, d3.max(longtermY));
+	}
 
-	let allDates = realdataX.concat(longtermX).concat(shorttermX);
+	let shorttermData = null;
+	if (response.shortterm.meta.available) {
+		const shorttermX = response.shortterm.meta.date_range.map(d => new Date(d));
+		const shorttermY = response.shortterm[datatype].map(x => x[locIdx]);
+		shorttermData = shorttermX.map((x, i) => ({date: x, value: shorttermY[i], label: "Short-Term Forecast"}));
+		allDates = allDates.concat(shorttermX);
+		maxY = Math.max(maxY, d3.max(shorttermY));
+	}
+
 	allDates = [...new Set(allDates)];
 
 	const capacityData = (datatype != "active") ? [] : response.meta.capacity_names.map((cn,c) => {
@@ -152,8 +164,6 @@ function extractData(response, datatype, locIdx) {
 			return {date: d, value: response.capacity[c][locIdx], label: cn + " Capacity"};
 		});
 	});
-
-	const maxY = d3.max([d3.max(realdataY), d3.max(longtermY), d3.max(shorttermY)]);
 
 	return {
 		realdata: realdataData,
@@ -170,6 +180,8 @@ function extractData(response, datatype, locIdx) {
 }
 
 function plotLine(data, xScale, yScale, container, lineColor) {
+
+	if (data == null) {return container;}
 
 	const line = d3.line()
 		.defined(d => !isNaN(d.value) && d.value != null)
@@ -303,6 +315,7 @@ class Tooltip {
 
 	bisectData(date, yval) {
 		const dists = this.lines.map(l => {
+			if (l == null) {return Infinity;}
 			const closestDateIdx = this.bisectDate(l, date, 1);
 			const closestDate = l[closestDateIdx].date;
 			if (this.dateFormat(date) != this.dateFormat(closestDate)) {return Infinity;}

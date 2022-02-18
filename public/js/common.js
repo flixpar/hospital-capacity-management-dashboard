@@ -91,8 +91,14 @@ function getDateIntervals(dates) {
 		xInterval = d3.utcWeek.every(2);
 	} else if (T < 120) {
 		xInterval = d3.utcWeek.every(3);
-	} else {
+	} else if (T < 365) {
 		xInterval = d3.utcMonth.every(1);
+	} else if (T < 730) {
+		xInterval = d3.utcMonth.every(2);
+	} else if (T < 1095) {
+		xInterval = d3.utcMonth.every(4);
+	} else {
+		xInterval = d3.utcMonth.every(6);
 	}
 	return xInterval;
 }
