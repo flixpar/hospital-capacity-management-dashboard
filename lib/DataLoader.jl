@@ -20,7 +20,7 @@ function load_jhhs(
 		end_date::Date,
 	)
 
-	rawdata = deserialize("data/completedata.jlser")
+	rawdata = deserialize("data/data.jlser")
 
 	data_range = rawdata.realdata[:meta].date_range
 	shortterm_range = rawdata.shortterm[:meta].date_range
@@ -34,8 +34,8 @@ function load_jhhs(
 		dates = data_range,
 	)
 	shortterm = (;
-		active = rawdata.shortterm[patient_type].active,
-		admitted = rawdata.shortterm[patient_type].admitted,
+		active = rawdata.shortterm[patient_type, scenario].active,
+		admitted = rawdata.shortterm[patient_type, scenario].admitted,
 		dates = shortterm_range,
 	)
 	longterm = (;
@@ -46,13 +46,13 @@ function load_jhhs(
 
 	if start_date in data_range && end_date in data_range
 		data = realdata
-	elseif start_date in data_range && end_date in shortterm_range && scenario == :shortterm
+	elseif start_date in data_range && end_date in shortterm_range && scenario != :none
 		data = merge_sources(shortterm, realdata)
-	elseif start_date in shortterm_range && end_date in shortterm_range && scenario == :shortterm
+	elseif start_date in shortterm_range && end_date in shortterm_range && scenario != :none
 		data = shortterm
-	elseif start_date in data_range && end_date in longterm_range && scenario != :shortterm
+	elseif start_date in data_range && end_date in longterm_range && scenario != :none
 		data = merge_sources(longterm, realdata)
-	elseif start_date in longterm_range && end_date in longterm_range && scenario != :shortterm
+	elseif start_date in longterm_range && end_date in longterm_range && scenario != :none
 		data = longterm
 	else
 		error("Invalid data loading parameters: $(scenario), $(patient_type), $(start_date), $(end_date)")
@@ -119,31 +119,31 @@ function load_jhhs(
 end
 
 function load_completedata(patienttype, scenario)
+	data = deserialize("data/data.jlser")
+
 	patienttype = Symbol(patienttype)
 	scenario = Symbol(scenario)
-	hasadmitted = (patienttype == :total)
-	data = deserialize("data/rawdata.jlser")
+
 	outdata = (
 		realdata = (
 			active = data.realdata[patienttype].active,
-			admitted = hasadmitted ? data.realdata[patienttype].admitted : nothing,
+			admitted = data.realdata[patienttype].admitted,
 			meta = data.realdata[:meta],
 		),
 		shortterm = (
-			active = data.shortterm[patienttype].active,
-			admitted = hasadmitted ? data.shortterm[patienttype].admitted : nothing,
+			active = data.shortterm[(patienttype, scenario)].active,
+			admitted = data.shortterm[(patienttype, scenario)].admitted,
 			meta = data.shortterm[:meta],
 		),
 		longterm = (
 			active = data.longterm[(patienttype, scenario)].active,
-			admitted = hasadmitted ? data.longterm[(patienttype, scenario)].admitted : nothing,
+			admitted = data.longterm[(patienttype, scenario)].admitted,
 			meta = data.longterm[:meta],
 		),
 		capacity = data.capacity[patienttype],
 		hospitals = data.capacity[:meta].hospitals,
 		meta = (;
 			capacity_names = data.capacity[:meta].capacity_names,
-			hasadmitted,
 		),
 	)
 	return outdata
