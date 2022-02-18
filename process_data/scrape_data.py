@@ -26,9 +26,13 @@ def main():
 	})
 	driver = webdriver.Chrome(options=options)
 
+	print("Starting automated scraping...")
+
 	login(driver)
 	download_admissions(driver, outfolder)
 	download_occupancy(driver, outfolder)
+
+	print("Completed successfully!")
 
 	driver.quit()
 	return
@@ -174,8 +178,13 @@ def download_occupancy(driver, outfolder):
 
 	waitforload(driver)
 
+	# hide date panel
+	driver.find_element(By.ID, "tabZoneId40").click()
+	time.sleep(1)
+
 	for active in [False, True]:
 		active_select.click()
+		time.sleep(0.5)
 		active_elems = driver.find_element(By.CLASS_NAME, "tabMenuContent").find_elements(By.CLASS_NAME, "tabMenuItemNameArea")
 		if active:
 			active_elems[1].click()
