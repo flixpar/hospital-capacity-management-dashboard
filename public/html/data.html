@@ -58,7 +58,7 @@
 					<label class="label column is-one-third" for="form-patient-type">Patient Type</label>
 					<div class="select is-fullwidth">
 						<select id="form-patient-type" v-model="params.patienttype">
-							<option value="total">All</option>
+							<option value="combined">All</option>
 							<option value="icu" selected>ICU</option>
 							<option value="acute">Acute</option>
 						</select>
@@ -69,8 +69,7 @@
 					<label class="label column is-one-third" for="form-scenario">Forecast Scenario</label>
 					<div class="select is-fullwidth">
 						<select id="form-scenario" v-model="params.scenario">
-							<option value="optimistic">Optimistic</option>
-							<option value="moderate" selected>Moderate</option>
+							<option value="none" selected>None</option>
 						</select>
 					</div>
 				</div>
@@ -95,7 +94,7 @@
 			</div>
 			<div id="result-area" class="column is-12" v-else-if="status == 'loaded'">
 				<result-section title="Data Compare" section-id="datacompare">
-					<fig-options type="data-compare" :options="[{value: 'active', text: 'Occupancy'}, {value: 'admitted', text: 'Admissions'}]" :show-options="params.patienttype == 'total'"></fig-options>
+					<fig-options type="data-compare" :options="[{value: 'active', text: 'Occupancy'}, {value: 'admitted', text: 'Admissions'}]" :show-options="params.patienttype == 'combined'"></fig-options>
 				</result-section>
 				<result-section title="Capacity Timeline" section-id="capacitytimeline">
 					<fig-options type="capacity-timeline" :options="[{value: 'realdata', text: 'Historical Data'}, {value: 'shortterm', text: 'Short-Term Forecast'}, {value: 'longterm', text: 'Long-Term Forecast'}]"></fig-options>
