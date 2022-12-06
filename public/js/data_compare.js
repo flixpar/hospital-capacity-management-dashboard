@@ -109,7 +109,7 @@ function plotHospital(response, datatype, locIdx, container, svg) {
 		container = plotLine(capacity, xScale, yScale, container, capacityColors[c]);
 	});
 
-	const yAxisText = (datatype == "active" ? "Occupancy" : "Admissions");
+	const yAxisText = (datatype == "occupancy" ? "Occupancy" : "Admissions");
 	container.append("text")
 		.attr("transform", `translate(4, ${plotSize.height / 2}) rotate(-90)`)
 		.attr("text-anchor", "middle")
@@ -117,7 +117,7 @@ function plotHospital(response, datatype, locIdx, container, svg) {
 		.style("font-size", fontSizes.axis)
 		.text(yAxisText);
 
-	const titleText = (datatype == "active" ? "COVID Occupancy: " : "COVID Patient Admissions: ") + response.hospitals[locIdx];
+	const titleText = (datatype == "occupancy" ? "COVID Occupancy: " : "COVID Patient Admissions: ") + response.hospitals[locIdx];
 	container.append("text")
 		.attr("x", plotSize.width / 2)
 		.attr("y", 5)
@@ -159,9 +159,9 @@ function extractData(response, datatype, locIdx) {
 
 	allDates = [...new Set(allDates)];
 
-	const capacityData = (datatype != "active") ? [] : response.meta.capacity_names.map((cn,c) => {
+	const capacityData = (datatype != "occupancy") ? [] : response.meta.capacity_names.map((cn,c) => {
 		return allDates.map(d => {
-			return {date: d, value: response.capacity[c][locIdx], label: cn + " Capacity"};
+			return {date: d, value: response.capacity_levels[c][locIdx], label: cn + " Capacity"};
 		});
 	});
 
@@ -297,7 +297,7 @@ class Tooltip {
 			this.point.attr("transform", "");
 		}
 
-		const datatypeStr = (d.label.indexOf("Capacity") >= 0) ? "Beds" : (this.data.meta.datatype == "active") ? "Occupancy" : "Admissions";
+		const datatypeStr = (d.label.indexOf("Capacity") >= 0) ? "Beds" : (this.data.meta.datatype == "occupancy") ? "Occupancy" : "Admissions";
 
 		this.line1.textContent = this.data.meta.locName;
 		this.line2.textContent = d.label;
@@ -334,7 +334,7 @@ class Tooltip {
 
 function makeDataCompareLegend(svg, response, datatype) {
 
-	if (datatype == "active") {
+	if (datatype == "occupancy") {
 		const row2Labels = response.meta.capacity_names.map(x => x + " Capacity");
 		const row2Colors = response.meta.capacity_names.map((_,i) => capacityColors[i]);
 		svg = makeLegend(svg, row2Labels, row2Colors, true, "top");

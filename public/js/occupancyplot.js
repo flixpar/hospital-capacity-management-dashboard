@@ -1,13 +1,13 @@
-const activePlotHeight = 400;
-const activePlotWidth  = 600;
-const activePlotMargin = ({top: 30, right: 30, bottom: 30, left: 40});
+const occupancyPlotHeight = 400;
+const occupancyPlotWidth  = 600;
+const occupancyPlotMargin = ({top: 30, right: 30, bottom: 30, left: 40});
 
 const font = "Helvetica";
 const axisFontSize = "17px";
 const titleFontSize = "22px";
 
-const active_color = "#17AC7B";
-const active_null_color = "#15ACF8";
+const occupancy_color = "#17AC7B";
+const occupancy_notfr_color = "#15ACF8";
 
 const capacityColors = ["gold", "darkorange", "red", "purple", "black"];
 
@@ -17,12 +17,12 @@ const bedsLineWidth = 8;
 const addPoints = true;
 
 import {makeHorizontalColorScale} from "./common.js";
-import {activeplotDescription} from "./figure_text.js";
+import {occupancyplotDescription} from "./figure_text.js";
 
-export function createActivePlot(response, add_description=true) {
-	const capacity = response.capacity;
-	const active = response.active;
-	const active_null = response.active_null;
+export function createOccupancyPlot(response, add_description=true) {
+	const capacity = response.capacity_levels;
+	const occupancy = response.occupancy;
+	const occupancy_notfr = response.occupancy_notfr;
 	const config = response.config;
 
 	const N = capacity.length;
@@ -45,14 +45,14 @@ export function createActivePlot(response, add_description=true) {
 		}
 		table.appendChild(row);
 	}
-	table.className = "activeplots-table";
+	table.className = "occupancyplots-table";
 
-	let active_data = [];
-	let active_null_data = [];
+	let occupancy_data = [];
+	let occupancy_notfr_data = [];
 	let capacity_data = [];
 	for (let i = 0; i < N; i++) {
-		active_data[i] = [];
-		active_null_data[i] = [];
+		occupancy_data[i] = [];
+		occupancy_notfr_data[i] = [];
 		capacity_data[i] = [];
 		for (let c = 0; c < C; c++) {
 			capacity_data[i][c] = [];
@@ -60,13 +60,13 @@ export function createActivePlot(response, add_description=true) {
 
 		for (let t = 0; t < T; t++) {
 			const d = new Date(Date.parse(config.dates[t]));
-			active_data[i][t] = {
+			occupancy_data[i][t] = {
 				"date": d,
-				"value": active[i][t],
+				"value": occupancy[i][t],
 			};
-			active_null_data[i][t] = {
+			occupancy_notfr_data[i][t] = {
 				"date": d,
-				"value": active_null[i][t],
+				"value": occupancy_notfr[i][t],
 			};
 			for (let c = 0; c < C; c++) {
 				capacity_data[i][c][t] = {
@@ -77,22 +77,22 @@ export function createActivePlot(response, add_description=true) {
 		}
 	}
 	const data = {
-		"active": active_data,
-		"active_null": active_null_data,
+		"occupancy": occupancy_data,
+		"occupancy_notfr": occupancy_notfr_data,
 		"capacity": capacity_data,
 	};
 
 	const x = d3.scaleUtc()
 		.domain(d3.extent(config.dates, d => new Date(Date.parse(d))))
-		.range([activePlotMargin.left, activePlotWidth - activePlotMargin.right]);
+		.range([occupancyPlotMargin.left, occupancyPlotWidth - occupancyPlotMargin.right]);
 
 	const xAxis = g => g
-		.attr("transform", `translate(0,${activePlotHeight - activePlotMargin.bottom})`)
+		.attr("transform", `translate(0,${occupancyPlotHeight - occupancyPlotMargin.bottom})`)
 		.style("font-family", font)
 		.style("font-size", axisFontSize)
 		.call(d3.axisBottom(x)
 			.ticks(d3.timeWeek.every(1))
-			.tickSize(-(activePlotHeight - activePlotMargin.top - activePlotMargin.bottom))
+			.tickSize(-(occupancyPlotHeight - occupancyPlotMargin.top - occupancyPlotMargin.bottom))
 			.tickFormat(d3.timeFormat("%m/%d"))
 		)
 		.call(g => g.select(".domain").remove())
@@ -104,31 +104,31 @@ export function createActivePlot(response, add_description=true) {
 
 	for (let i = 0; i < N; i++) {
 		let svg = d3.create("svg")
-			.attr("viewBox", [0, 0, activePlotWidth, activePlotHeight]);
+			.attr("viewBox", [0, 0, occupancyPlotWidth, occupancyPlotHeight]);
 
 		svg.append("text")
-			.attr("x", activePlotWidth/2)
+			.attr("x", occupancyPlotWidth/2)
 			.attr("y", 20)
 			.attr("text-anchor", "middle")
 			.style("font-family", font)
 			.style("font-size", titleFontSize)
 			.text(config.node_names[i]);
 
-		const maxActive = d3.max(active[i]);
-		const maxActiveNull = d3.max(active_null[i]);
-		const maxY = d3.max([maxActive, maxActiveNull, capacity[i][C-1]]);
+		const maxOccupancy = d3.max(occupancy[i]);
+		const maxOccupancyNoTfr = d3.max(occupancy_notfr[i]);
+		const maxY = d3.max([maxOccupancy, maxOccupancyNoTfr, capacity[i][C-1]]);
 
 		const y = d3.scaleLinear()
 			.domain([0, maxY]).nice()
-			.range([activePlotHeight - activePlotMargin.bottom, activePlotMargin.top]);
+			.range([occupancyPlotHeight - occupancyPlotMargin.bottom, occupancyPlotMargin.top]);
 
 		const yAxis = g => g
-			.attr("transform", `translate(${activePlotMargin.left},0)`)
+			.attr("transform", `translate(${occupancyPlotMargin.left},0)`)
 			.style("font-family", font)
 			.style("font-size", axisFontSize)
 			.call(d3.axisRight(y)
 				.ticks(4)
-				.tickSize(activePlotWidth - activePlotMargin.left - activePlotMargin.right)
+				.tickSize(occupancyPlotWidth - occupancyPlotMargin.left - occupancyPlotMargin.right)
 			)
 			.call(g => g.select(".domain").remove())
 			.call(g => g.selectAll(".tick line")
@@ -163,18 +163,18 @@ export function createActivePlot(response, add_description=true) {
 		}
 
 		svg.append("path")
-			.datum(data["active"][i])
+			.datum(data["occupancy"][i])
 			.attr("fill", "none")
-			.attr("stroke", active_color)
+			.attr("stroke", occupancy_color)
 			.attr("stroke-width", lineWidth)
 			.attr("stroke-linejoin", "round")
 			.attr("stroke-linecap", "round")
 			.attr("d", line);
 
 		svg.append("path")
-			.datum(data["active_null"][i])
+			.datum(data["occupancy_notfr"][i])
 			.attr("fill", "none")
-			.attr("stroke", active_null_color)
+			.attr("stroke", occupancy_notfr_color)
 			.attr("stroke-width", lineWidth)
 			.attr("stroke-linejoin", "round")
 			.attr("stroke-linecap", "round")
@@ -182,9 +182,9 @@ export function createActivePlot(response, add_description=true) {
 
 		if (addPoints) {
 			svg.selectAll(".point")
-				.data(data["active"][i])
+				.data(data["occupancy"][i])
 				.enter().append("svg:circle")
-				.attr("fill", active_color)
+				.attr("fill", occupancy_color)
 				.attr("stroke", "white")
 				.attr("stroke-width", 2)
 				.attr("cx", d => x(d.date))
@@ -192,9 +192,9 @@ export function createActivePlot(response, add_description=true) {
 				.attr("r", lineWidth+2);
 
 			svg.selectAll(".point")
-				.data(data["active_null"][i])
+				.data(data["occupancy_notfr"][i])
 				.enter().append("svg:circle")
-				.attr("fill", active_null_color)
+				.attr("fill", occupancy_notfr_color)
 				.attr("stroke", "white")
 				.attr("stroke-width", 2)
 				.attr("cx", d => x(d.date))
@@ -209,9 +209,9 @@ export function createActivePlot(response, add_description=true) {
 
 		svgNode.addEventListener("mousemove", event => {
 			const tdWidth = svgNode.clientWidth;
-			const z = (event.offsetX / tdWidth) * activePlotWidth;
-			const w = event.offsetY * (activePlotWidth / tdWidth);
-			const d = bisect([data["active"][i], data["active_null"][i]], x.invert(z), y.invert(w));
+			const z = (event.offsetX / tdWidth) * occupancyPlotWidth;
+			const w = event.offsetY * (occupancyPlotWidth / tdWidth);
+			const d = bisect([data["occupancy"][i], data["occupancy_notfr"][i]], x.invert(z), y.invert(w));
 			tooltip.show(d);
 		});
 		svgNode.addEventListener("mouseleave", () => tooltip.hide());
@@ -220,18 +220,18 @@ export function createActivePlot(response, add_description=true) {
 		tableEntries[i].appendChild(svgNode);
 	}
 
-	const section = document.getElementById("section-results-active");
+	const section = document.getElementById("section-results-occupancy");
 
 	if (add_description) {
 		let description = document.createElement("p");
 		description.className = "caption";
-		description.innerHTML = activeplotDescription;
+		description.innerHTML = occupancyplotDescription;
 		section.appendChild(description);
 	}
 
-	const activeLabels = ["Active Patients (Without Transfers)", "Active Patients (With Transfers)"];
-	const activeColors = [active_null_color, active_color];
-	const patientsColorscaleElem = makeHorizontalColorScale(activeLabels, activeColors);
+	const occupancyLabels = ["Occupancy (Without Transfers)", "Occupancy (With Transfers)"];
+	const occupancyColors = [occupancy_notfr_color, occupancy_color];
+	const patientsColorscaleElem = makeHorizontalColorScale(occupancyLabels, occupancyColors);
 	section.appendChild(patientsColorscaleElem);
 
 	const capacityNames = response.config.capacity_names;

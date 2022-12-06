@@ -36,9 +36,9 @@ function createCapacityTimeline(response, add_description=true) {
 
 	createTransfersSelect(response);
 
-	const totalSent = d3.sum(response.sent, x => d3.sum(x, y => d3.sum(y)));
+	const totalTransfers = d3.sum(response.transfers, x => d3.sum(x, y => d3.sum(y)));
 	let sel = document.getElementById("capacitytimeline-transfers-select");
-	if (totalSent < 0.05) {
+	if (totalTransfers < 0.05) {
 		sel.value = false;
 		sel.disabled = true;
 	} else {
@@ -252,9 +252,9 @@ function computeCapacityTimelineData(response, locIdx, withTransfers=true) {
 	let prevLevel = null;
 	let startDate = 0;
 	for (let t = 0; t < T; t++) {
-		const activeToday = withTransfers ? response.active[locIdx][t] : response.active_null[locIdx][t];
-		let currentLevel = response.capacity[locIdx].findIndex(c => (c+0.9) >= activeToday);
-		// currentLevel = response.capacity[locIdx].lastIndexOf(response.capacity[locIdx][currentLevel]);
+		const occupancyToday = withTransfers ? response.occupancy[locIdx][t] : response.occupancy_notfr[locIdx][t];
+		let currentLevel = response.capacity_levels[locIdx].findIndex(c => (c+0.9) >= occupancyToday);
+		// currentLevel = response.capacity_levels[locIdx].lastIndexOf(response.capacity_levels[locIdx][currentLevel]);
 		if (currentLevel != prevLevel && t != 0) {
 			timelineData.push({
 				startDate: dates[startDate],

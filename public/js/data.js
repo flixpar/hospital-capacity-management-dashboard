@@ -137,10 +137,10 @@ function unproxy(x) {
 
 function convertData(response, datasource="realdata") {
 	let data = {
-		active: d3.transpose(response[datasource].active),
-		active_null: d3.transpose(response[datasource].active),
-		beds: response.capacity[0],
-		capacity: d3.transpose(response.capacity),
+		occupancy: d3.transpose(response[datasource].occupancy),
+		occupancy_notfr: d3.transpose(response[datasource].occupancy),
+		beds: response.capacity_levels[0],
+		capacity: d3.transpose(response.capacity_levels),
 		config: {
 			dates: response[datasource].meta.date_range,
 			node_names: response.hospitals,

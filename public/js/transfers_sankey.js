@@ -79,7 +79,7 @@ function makeTransfersSankey(response, graph) {
 		.style("font-size", "18px")
 		.attr("fill", "black")
 		.attr("transform", `rotate(-90,${transfersSankeyMargins.right/2},${transfersSankeySize.height/2})`)
-		.text("Patients Sent");
+		.text("Patients Transfers");
 
 	// color scale
 	const _colorScale = d3.scaleOrdinal()
@@ -180,15 +180,15 @@ function toGraph(response, excludeSelf=false) {
 	const locNames = response.config.node_names;
 	const locInd = d3.range(N);
 
-	const totalSent = locInd.map(i => locInd.map(j => {
-		return d3.sum(response.sent[i][j]);
+	const totalTransfers = locInd.map(i => locInd.map(j => {
+		return d3.sum(response.transfers[i][j]);
 	}));
 
 	const srcNames = locNames.filter((_,i) => {
-		return d3.some(totalSent[i], z => z > 0);
+		return d3.some(totalTransfers[i], z => z > 0);
 	});
 	const dstNames = locNames.filter((_, i) => {
-		return d3.some(locInd.map(j => totalSent[j][i]), z => z > 0);
+		return d3.some(locInd.map(j => totalTransfers[j][i]), z => z > 0);
 	});
 
 	const srcNodes = srcNames.map(colName => {return {name: colName+"-src", idx: locNames.indexOf(colName)}});
@@ -198,7 +198,7 @@ function toGraph(response, excludeSelf=false) {
 	let links = [];
 	locNames.forEach((locName, i) => {
 		for (let j = 0; j < N; j++) {
-			const v = totalSent[i][j];
+			const v = totalTransfers[i][j];
 			if (v < 1) {continue;}
 			if (excludeSelf && i == j) {continue;}
 			links.push({source: locName+"-src", target: locNames[j]+"-dst", value: v});
@@ -209,9 +209,9 @@ function toGraph(response, excludeSelf=false) {
 }
 
 function checkTransfers(response, thresh=0.5) {
-	const totalSentEnough = d3.sum(response.sent, x => d3.sum(x, y => d3.sum(y))) > thresh;
-	const anySentEnough = !response.sent.every(z => z.every(x => d3.sum(x) < thresh));
-	return totalSentEnough && anySentEnough;
+	const totalTransfersEnough = d3.sum(response.transfers, x => d3.sum(x, y => d3.sum(y))) > thresh;
+	const anyTransfersEnough = !response.transfers.every(z => z.every(x => d3.sum(x) < thresh));
+	return totalTransfersEnough && anyTransfersEnough;
 }
 
 class TransfersSankeyTooltip {

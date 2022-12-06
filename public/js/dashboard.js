@@ -54,15 +54,15 @@ function makeJHHSDashboard(response) {
 
 	const N = response.beds.length;
 	const T = response.config.dates.length;
-	const C = response.capacity[0].length;
+	const C = response.capacity_levels[0].length;
 
 	const plotSize = {width: (dashboardSize.width - dashboardMargin.left - dashboardMargin.right) / N, height: dashboardSize.height};
 	const plotMargin = {left: 5, right: 5, top: 12, bottom: 25};
 
-	const maxActive = d3.max(response.active, x => d3.max(x));
-	const maxActiveNull = d3.max(response.active_null, x => d3.max(x));
-	const maxCapacity = d3.max(response.capacity, x => x[C-1]);
-	const maxY = d3.max([maxActive, maxActiveNull, maxCapacity]);
+	const maxOccupancy = d3.max(response.occupancy, x => d3.max(x));
+	const maxOccupancyNoTfr = d3.max(response.occupancy_notfr, x => d3.max(x));
+	const maxCapacity = d3.max(response.capacity_levels, x => x[C-1]);
+	const maxY = d3.max([maxOccupancy, maxOccupancyNoTfr, maxCapacity]);
 
 	const xScale = d3.scaleUtc()
 		.domain(d3.extent(response.config.dates, d => new Date(Date.parse(d))))
@@ -87,7 +87,7 @@ function makeJHHSDashboard(response) {
 	for (let i = 0; i < N; i++) {
 		const j = ind[i];
 		let g = svg.append("g").attr("transform", `translate(${dashboardMargin.left + (i*plotSize.width)}, ${dashboardMargin.top})`);
-		g,tooltips[i] = plotActive(g, xScale, yScale, data, response, j, plotSize, plotMargin);
+		g,tooltips[i] = plotOccupancy(g, xScale, yScale, data, response, j, plotSize, plotMargin);
 	}
 	for (let i = 0; i < N; i++) {
 		let g = svg.append("g").attr("transform", `translate(${dashboardMargin.left + (i*plotSize.width)}, ${dashboardMargin.top})`);
@@ -99,7 +99,7 @@ function makeJHHSDashboard(response) {
 	return svg.node();
 }
 
-function plotActive(svg, xScale, yScale, data, response, locIdx, plotSize, plotMargin) {
+function plotOccupancy(svg, xScale, yScale, data, response, locIdx, plotSize, plotMargin) {
 
 	const xAxis = g => g
 		.attr("transform", `translate(0,${plotSize.height - plotMargin.bottom})`)
@@ -157,7 +157,7 @@ function plotActive(svg, xScale, yScale, data, response, locIdx, plotSize, plotM
 		.x(d => xScale(d.date))
 		.y(d => yScale(d.value));
 
-	const C = response.capacity[0].length;
+	const C = response.capacity_levels[0].length;
 	for (let c = 0; c < C; c++) {
 		svg.append("path")
 			.datum(data["capacity"][locIdx][c])
@@ -173,7 +173,7 @@ function plotActive(svg, xScale, yScale, data, response, locIdx, plotSize, plotM
 	const locColor = (locName in dashboardLineColors) ? dashboardLineColors[locName] : dashboardLineColors["default"];
 
 	svg.append("path")
-		.datum(data["active"][locIdx])
+		.datum(data["occupancy"][locIdx])
 		.attr("fill", "none")
 		.attr("stroke", locColor)
 		.attr("stroke-width", dashboardLineWidth)
@@ -182,7 +182,7 @@ function plotActive(svg, xScale, yScale, data, response, locIdx, plotSize, plotM
 		.attr("d", line);
 
 	svg.append("path")
-		.datum(data["active_null"][locIdx])
+		.datum(data["occupancy_notfr"][locIdx])
 		.attr("fill", "none")
 		.attr("stroke", locColor)
 		.attr("stroke-width", dashboardLineWidth/1.5)
@@ -207,8 +207,8 @@ function plotActive(svg, xScale, yScale, data, response, locIdx, plotSize, plotM
 		.attr("pointer-events", "visible");
 
 	const lines = [
-		data["active_null"][locIdx],
-		data["active"][locIdx],
+		data["occupancy_notfr"][locIdx],
+		data["occupancy"][locIdx],
 	];
 	for (let c = 0; c < C; c++) {
 		lines.push(data["capacity"][locIdx][c]);
@@ -272,14 +272,14 @@ function makeYAxis(svg, xScale, yScale, plotSize, plotMargin) {
 function computeDashboardData(response) {
 	const N = response.beds.length;
 	const T = response.config.dates.length;
-	const C = response.capacity[0].length;
+	const C = response.capacity_levels[0].length;
 
-	let active_data = [];
-	let active_null_data = [];
+	let occupancy_data = [];
+	let occupancy_notfr_data = [];
 	let capacity_data = [];
 	for (let i = 0; i < N; i++) {
-		active_data[i] = [];
-		active_null_data[i] = [];
+		occupancy_data[i] = [];
+		occupancy_notfr_data[i] = [];
 		capacity_data[i] = [];
 		for (let c = 0; c < C; c++) {
 		capacity_data[i][c] = [];
@@ -287,22 +287,22 @@ function computeDashboardData(response) {
 
 		for (let t = 0; t < T; t++) {
 			const d = new Date(Date.parse(response.config.dates[t]));
-			active_data[i][t] = {
+			occupancy_data[i][t] = {
 				"date": d,
-				"value": response.active[i][t],
+				"value": response.occupancy[i][t],
 				"data_type": "With Transfers",
 				"node_name": response.config.node_names[i],
 			};
-			active_null_data[i][t] = {
+			occupancy_notfr_data[i][t] = {
 				"date": d,
-				"value": response.active_null[i][t],
+				"value": response.occupancy_notfr[i][t],
 				"data_type": "Without Transfers",
 				"node_name": response.config.node_names[i],
 			};
 			for (let c = 0; c < C; c++) {
 				capacity_data[i][c][t] = {
 					"date": d,
-					"value": response.capacity[i][c],
+					"value": response.capacity_levels[i][c],
 					"data_type": response.config.capacity_names[c],
 					"node_name": response.config.node_names[i],
 				};
@@ -310,8 +310,8 @@ function computeDashboardData(response) {
 		}
 	}
 	const data = {
-		"active": active_data,
-		"active_null": active_null_data,
+		"occupancy": occupancy_data,
+		"occupancy_notfr": occupancy_notfr_data,
 		"capacity": capacity_data,
 	};
 

@@ -12,11 +12,11 @@ function createSurgeCapacityMetrics(rawdata, capacityLevel=0) {
 	const C = rawdata.capacity[0].length;
 	const nDecimals = 0;
 
-	const max_active_wtfr = d3.range(N).map(i => d3.max(rawdata.active[i]));
-	const max_active_notfr = d3.range(N).map(i => d3.max(rawdata.active_null[i]));
-	const max_overflows_wtfr = max_active_wtfr.map((a,i) => Math.max(0, a - rawdata.capacity[i][capacityLevel]));
-	const max_overflows_notfr = max_active_notfr.map((a,i) => Math.max(0, a - rawdata.capacity[i][capacityLevel]));
-	const max_capacitylevels_wtfr = max_active_wtfr.map((m,i) => rawdata.capacity[i].findIndex(c => c > m)).map(x => (x == -1) ? C-1 : Math.max(0, x-1));
+	const max_occupancy_wtfr = d3.range(N).map(i => d3.max(rawdata.occupancy[i]));
+	const max_occupancy_notfr = d3.range(N).map(i => d3.max(rawdata.occupancy_notfr[i]));
+	const max_overflows_wtfr = max_occupancy_wtfr.map((a,i) => Math.max(0, a - rawdata.capacity[i][capacityLevel]));
+	const max_overflows_notfr = max_occupancy_notfr.map((a,i) => Math.max(0, a - rawdata.capacity[i][capacityLevel]));
+	const max_capacitylevels_wtfr = max_occupancy_wtfr.map((m,i) => rawdata.capacity[i].findIndex(c => c > m)).map(x => (x == -1) ? C-1 : Math.max(0, x-1));
 
 	let table = document.createElement("table");
 	table.id = "surgemetrics-table";
@@ -61,11 +61,11 @@ function createSurgeCapacityMetrics(rawdata, capacityLevel=0) {
 	const maxCapLevelName = rawdata.config.capacity_names[d3.max(max_capacitylevels_wtfr)];
 	addColumn(["Total", d3.sum(max_overflows_wtfr), d3.sum(max_overflows_notfr), maxCapLevelName]);
 
-	const totalActive = d3.range(T).map(t => d3.sum(rawdata.active, a => a[t]));
-	const maxActive = d3.max(totalActive);
+	const totalOccupancy = d3.range(T).map(t => d3.sum(rawdata.occupancy, a => a[t]));
+	const maxOccupancy = d3.max(totalOccupancy);
 	const totalCapacity = d3.range(C).map(c => d3.sum(rawdata.capacity, x => x[c]));
-	const idealOverflow = Math.max(0, maxActive - totalCapacity[capacityLevel]);
-	const idealCapLevel = totalCapacity.findIndex(c => c > maxActive);
+	const idealOverflow = Math.max(0, maxOccupancy - totalCapacity[capacityLevel]);
+	const idealCapLevel = totalCapacity.findIndex(c => c > maxOccupancy);
 	const idealCapLevelIdx = (idealCapLevel == -1) ? C-1 : Math.max(0, idealCapLevel-1);
 	const idealCapLevelName = rawdata.config.capacity_names[idealCapLevelIdx];
 	addColumn(["Ideal", idealOverflow, "–", idealCapLevelName]);
@@ -137,29 +137,29 @@ function createStatsSummary(rawdata, capacityLevel=0) {
 		}
 	}
 
-	const overflow_byloc = d3.range(N).map(i => rawdata.active[i].map(x => Math.max(0, x - rawdata.capacity[i][capacityLevel])));
-	const overflow_nosent_byloc = d3.range(N).map(i => rawdata.active_null[i].map(x => Math.max(0, x - rawdata.capacity[i][capacityLevel])));
+	const overflow_byloc = d3.range(N).map(i => rawdata.occupancy[i].map(x => Math.max(0, x - rawdata.capacity[i][capacityLevel])));
+	const overflow_notfr_byloc = d3.range(N).map(i => rawdata.occupancy_notfr[i].map(x => Math.max(0, x - rawdata.capacity[i][capacityLevel])));
 
-	const overflow_nosent = d3.sum(d3.merge(overflow_nosent_byloc));
-	const overflow_sent = d3.sum(d3.merge(overflow_byloc));
-	const overflow_reduction = (overflow_nosent - overflow_sent) / overflow_nosent;
-	const overflow_reduction_str = (overflow_nosent != 0) ? (overflow_reduction * 100).toFixed(2) + "%" : "–";
+	const overflow_notfr = d3.sum(d3.merge(overflow_notfr_byloc));
+	const overflow_wtfr = d3.sum(d3.merge(overflow_byloc));
+	const overflow_reduction = (overflow_notfr - overflow_wtfr) / overflow_notfr;
+	const overflow_reduction_str = (overflow_notfr != 0) ? (overflow_reduction * 100).toFixed(2) + "%" : "–";
 
-	const maxoverflow_nosent = d3.sum(d3.range(N).map(i => d3.max(overflow_nosent_byloc[i])));
-	const maxoverflow_sent = d3.sum(d3.range(N).map(i => d3.max(overflow_byloc[i])));;
+	const maxoverflow_notfr = d3.sum(d3.range(N).map(i => d3.max(overflow_notfr_byloc[i])));
+	const maxoverflow_wtfr = d3.sum(d3.range(N).map(i => d3.max(overflow_byloc[i])));;
 
-	const sent_total = d3.sum(rawdata.sent, x => d3.sum(x, z => d3.sum(z)));
-	const sent_pct = sent_total / rawdata.total_patients;
+	const transfers_total = d3.sum(rawdata.transfers, x => d3.sum(x, z => d3.sum(z)));
+	const transfers_pct = transfers_total / rawdata.total_patients;
 
-	addMetric("Required Surge Capacity (Without Transfers)", overflow_nosent);
-	addMetric("Required Surge Capacity (With Transfers)", overflow_sent);
+	addMetric("Required Surge Capacity (Without Transfers)", overflow_notfr);
+	addMetric("Required Surge Capacity (With Transfers)", overflow_wtfr);
 	addMetric("Reduction in Required Surge Capacity", overflow_reduction_str);
 	addMetricSeparator();
-	addMetric("Max Required Surge Capacity (Without Transfers)", maxoverflow_nosent);
-	addMetric("Max Required Surge Capacity (With Transfers)", maxoverflow_sent);
+	addMetric("Max Required Surge Capacity (Without Transfers)", maxoverflow_notfr);
+	addMetric("Max Required Surge Capacity (With Transfers)", maxoverflow_wtfr);
 	addMetricSeparator();
-	addMetric("Transferred Patients", sent_total);
-	addMetric("Perecent of Patients Transferred", (sent_pct * 100).toFixed(2) + "%");
+	addMetric("Transferred Patients", transfers_total);
+	addMetric("Perecent of Patients Transferred", (transfers_pct * 100).toFixed(2) + "%");
 
 	if (document.getElementById("metrics-table") == null) {
 		const section = getSection("results-metrics");

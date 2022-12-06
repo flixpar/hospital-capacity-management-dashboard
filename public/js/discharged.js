@@ -53,8 +53,8 @@ function makeDischargedPlot(response) {
 	const data = computeDischargedData(response);
 
 	const maxDischarged = d3.max(data.discharged, x => d3.max(x, y => y.value));
-	const maxDischargedNull = d3.max(data.discharged_null, x => d3.max(x, y => y.value));
-	const maxY = d3.max([maxDischarged, maxDischargedNull]);
+	const maxDischargedNoTfr = d3.max(data.discharged_notfr, x => d3.max(x, y => y.value));
+	const maxY = d3.max([maxDischarged, maxDischargedNoTfr]);
 
 	const xScale = d3.scaleUtc()
 		.domain(d3.extent(response.config.dates, d => new Date(Date.parse(d))))
@@ -157,7 +157,7 @@ function plotDischarged(svg, xScale, yScale, data, response, locIdx, plotSize, p
 		.attr("d", line);
 
 	svg.append("path")
-		.datum(data["discharged_null"][locIdx])
+		.datum(data["discharged_notfr"][locIdx])
 		.attr("fill", "none")
 		.attr("stroke", locColor)
 		.attr("stroke-width", dischargedLineWidth/1.5)
@@ -182,7 +182,7 @@ function plotDischarged(svg, xScale, yScale, data, response, locIdx, plotSize, p
 		.attr("pointer-events", "visible");
 
 	const lines = [
-		data["discharged_null"][locIdx],
+		data["discharged_notfr"][locIdx],
 		data["discharged"][locIdx],
 	];
 
@@ -247,31 +247,31 @@ function computeDischargedData(response) {
 	const nodeInds = d3.range(N);
 
 	let discharged_data = [];
-	let discharged_null_data = [];
+	let discharged_notfr_data = [];
 	for (let i = 0; i < N; i++) {
 		discharged_data[i] = [];
-		discharged_null_data[i] = [];
+		discharged_notfr_data[i] = [];
 
 		for (let t = 0; t < T; t++) {
 			const d = new Date(Date.parse(response.config.dates[t]));
 			discharged_data[i][t] = {
 				"date": d,
 				"value": (t == 0) ? 0 : (
-					response.active[i][t-1]
-					+ response.admitted[i][t]
-					- d3.sum(nodeInds.map(j => response.sent[i][j][t]))
-					+ d3.sum(nodeInds.map(j => response.sent[j][i][t]))
-					- response.active[i][t]
+					response.occupancy[i][t-1]
+					+ response.admissions[i][t]
+					- d3.sum(nodeInds.map(j => response.transfers[i][j][t]))
+					+ d3.sum(nodeInds.map(j => response.transfers[j][i][t]))
+					- response.occupancy[i][t]
 				),
 				"data_type": "With Transfers",
 				"node_name": response.config.node_names[i],
 			};
-			discharged_null_data[i][t] = {
+			discharged_notfr_data[i][t] = {
 				"date": d,
 				"value": (t == 0) ? 0 : (
-					response.active_null[i][t-1]
-					+ response.admitted[i][t]
-					- response.active_null[i][t]
+					response.occupancy_notfr[i][t-1]
+					+ response.admissions[i][t]
+					- response.occupancy_notfr[i][t]
 				),
 				"data_type": "Without Transfers",
 				"node_name": response.config.node_names[i],
@@ -280,7 +280,7 @@ function computeDischargedData(response) {
 	}
 	const data = {
 		"discharged": discharged_data,
-		"discharged_null": discharged_null_data,
+		"discharged_notfr": discharged_notfr_data,
 	};
 
 	return data;

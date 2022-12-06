@@ -19,5 +19,5 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	});
 
-	document.querySelector(".navbar-dropdown").addEventListener("click", () => document.activeElement.blur());	
+	document.querySelector(".navbar-dropdown").addEventListener("click", () => document.occupancyElement.blur());	
 });

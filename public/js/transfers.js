@@ -17,8 +17,8 @@ export {createTransfersBreakdownPlot};
 
 
 function createTransfersBreakdownPlot(response, add_description=true) {
-	const totalSent = d3.sum(response.sent, x => d3.sum(x, y => d3.sum(y)));
-	if (totalSent < 0.1) {return;}
+	const totalTransfers = d3.sum(response.transfers, x => d3.sum(x, y => d3.sum(y)));
+	if (totalTransfers < 0.1) {return;}
 
 	const section = document.getElementById("section-results-transfers");
 	if (add_description) {
@@ -78,7 +78,7 @@ function makeTransfersBreakdownSubplot(svg, response, locIdx, plotSize) {
 		.range([0, plotSize.width]);
 
 	const maxY = d3.max(d3.range(N).map(i => d3.range(T).map(t => {
-		return d3.sum(response.sent[i], x => x[t]);
+		return d3.sum(response.transfers[i], x => x[t]);
 	})).flat());
 	const y = d3.scaleLinear()
 		.domain([0, maxY]).nice()
@@ -148,7 +148,7 @@ function makeTransfersBreakdownSubplot(svg, response, locIdx, plotSize) {
 		.text(response.config.node_names[locIdx]);
 
 	const data = d3.range(T).map(t => {
-		let vals = d3.cumsum(response.sent[locIdx], a => a[t]);
+		let vals = d3.cumsum(response.transfers[locIdx], a => a[t]);
 		return {
 			date: dates[t],
 			values: vals,
@@ -162,7 +162,7 @@ function makeTransfersBreakdownSubplot(svg, response, locIdx, plotSize) {
 				color: tfrBarColors[response.config.node_names[j]],
 				0: (j == 0) ? 0 : d.values[j-1],
 				1: d.values[j],
-				value: response.sent[locIdx][j][t],
+				value: response.transfers[locIdx][j][t],
 				fromIdx: locIdx,
 				toIdx: j,
 			}

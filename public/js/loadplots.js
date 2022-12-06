@@ -61,8 +61,8 @@ function makeLoadPlots(rawdata, capacityLevel=0, plotTitle="COVID Occupancy by H
 	const labelsWidth = 45;
 	const titleHeight = 40;
 
-	const totalSent = d3.sum(rawdata.sent, x => d3.sum(x, y => d3.sum(y)));
-	const showTransfers = totalSent > 0.1;
+	const totalTransfers = d3.sum(rawdata.transfers, x => d3.sum(x, y => d3.sum(y)));
+	const showTransfers = totalTransfers > 0.1;
 
 	let totalWidth = 2*loadPlotsWidth + loadPlotsMargin.left + loadPlotsMargin.right + betweenMargin + labelsWidth;
 	const totalHeight = loadPlotsHeight + loadPlotsMargin.top + loadPlotsMargin.bottom + titleHeight;
@@ -79,14 +79,14 @@ function makeLoadPlots(rawdata, capacityLevel=0, plotTitle="COVID Occupancy by H
 	let g3 = svg.append("g").attr("transform", `translate(0, ${loadPlotsHeight + loadPlotsMargin.top + loadPlotsMargin.bottom + titleHeight})`);
 	let g4 = svg.append("g").attr("transform", `translate(${totalWidth - loadPlotsMargin.right - labelsWidth}, ${loadPlotsMargin.top + titleHeight})`);
 
-	const maxLoadVal = d3.max(loadData.load_null, x => d3.max(x, y => y.value))
+	const maxLoadVal = d3.max(loadData.load_notfr, x => d3.max(x, y => y.value))
 	const maxY = Math.min(5.0, Math.max(2.0, Math.ceil(maxLoadVal)));
 
 	const yScale = d3.scaleLinear()
 		.domain([0, maxY]).nice()
 		.range([loadPlotsHeight, 0]);
 
-	g1 = makeLoadPlot(g1, loadData.load_null, yScale, maxY, "Without Optimal Transfers");
+	g1 = makeLoadPlot(g1, loadData.load_notfr, yScale, maxY, "Without Optimal Transfers");
 	g2 = showTransfers ? makeLoadPlot(g2, loadData.load, yScale, maxY, "With Optimal Transfers") : g2;
 	g3, legendHeight = makeLoadPlotsLegend(g3, rawdata.config.node_names, totalWidth);
 	g4 = makeLoadLabels(g4, yScale, maxY);
@@ -498,7 +498,7 @@ function extractLoadData(rawdata, capacityLevel=3) {
 	const T = rawdata.config.dates.length;
 
 	let load_data = [];
-	let load_null_data = [];
+	let load_notfr_data = [];
 
 	if (capacityLevel == -1) {
 		capacityLevel = rawdata.capacity[0].length - 1;
@@ -506,7 +506,7 @@ function extractLoadData(rawdata, capacityLevel=3) {
 
 	for (let i = 0; i < N; i++) {
 		load_data[i] = [];
-		load_null_data[i] = [];
+		load_notfr_data[i] = [];
 
 		for (let t = 0; t < T; t++) {
 			const d = new Date(Date.parse(rawdata.config.dates[t]));
@@ -515,18 +515,18 @@ function extractLoadData(rawdata, capacityLevel=3) {
 			}
 			load_data[i][t] = {
 				"date": d,
-				"value": rawdata.active[i][t] / rawdata.capacity[i][capacityLevel],
+				"value": rawdata.occupancy[i][t] / rawdata.capacity[i][capacityLevel],
 			};
-			load_null_data[i][t] = {
+			load_notfr_data[i][t] = {
 				"date": d,
-				"value": rawdata.active_null[i][t] / rawdata.capacity[i][capacityLevel],
+				"value": rawdata.occupancy_notfr[i][t] / rawdata.capacity[i][capacityLevel],
 			};
 		}
 	}
 
 	return {
 		"load": load_data,
-		"load_null": load_null_data,
+		"load_notfr": load_notfr_data,
 	};
 }
 
@@ -540,12 +540,12 @@ function extractOverallLoadData(rawdata, capacityLevel=3) {
 
 	let overall_load = [];
 	const totBeds = d3.sum(rawdata.capacity, x => x[capacityLevel]);
-	const activeNullByDay = d3.transpose(rawdata.active_null);
+	const occupancyNoTfrByDay = d3.transpose(rawdata.occupancy_notfr);
 	for (let t = 0; t < T; t++) {
 		const d = new Date(Date.parse(rawdata.config.dates[t]));
 		overall_load[t] = {
 			"date": d,
-			"value": d3.sum(activeNullByDay[t]) / totBeds,
+			"value": d3.sum(occupancyNoTfrByDay[t]) / totBeds,
 		};
 	}
 

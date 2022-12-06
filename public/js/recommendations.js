@@ -4,13 +4,13 @@ import * as common from "./common.js";
 import {createMap} from "./map_plots.js";
 import {createJHHSDashboard} from "./dashboard.js";
 import {createTransfersBreakdownPlot} from "./transfers.js";
-import {createAdmittedPlot} from "./admitted.js";
+import {createAdmissionsPlot} from "./admitted.js";
 import {createDischargedPlot} from "./discharged.js";
 import {createCapacityTimeline} from "./capacity_timeline.js";
 import {createOverallLoadPlot, createLoadPlots} from "./loadplots.js";
 import {createTransfersSankey} from "./transfers_sankey.js";
 import {createRidgePlot} from "./ridgeplot.js";
-import {createActivePlot} from "./activeplot.js";
+import {createOccupancyPlot} from "./occupancyplot.js";
 import {createStatsSummary, createSurgeCapacityMetrics, createAdmissionSimsTable} from "./metrics.js";
 import {setupTable, setupTableFilter, setupTableDownloads} from "./tables.js";
 import {generateAllFigureDownloadButtons} from "./figuredl.js";
@@ -23,6 +23,8 @@ function handleResponse(response, status, xhr) {
 	console.log("Updating...");
 	hideProgressbar();
 	container.innerHTML = "";
+
+	response.beds = response.capacity_levels.map(x => x[0]);
 
 	recentResponse = response;
 
@@ -43,17 +45,17 @@ function handleResponse(response, status, xhr) {
 	createTransfersSankey(response);
 	createTransfersBreakdownPlot(response);
 
-	createAdmittedPlot(response);
-	createActivePlot(response);
+	createAdmissionsPlot(response);
+	createOccupancyPlot(response);
 	createOverallLoadPlot(response);
 	createLoadPlots(response);
 
-	createAdmissionSimsTable(response, false);
+	// createAdmissionSimsTable(response, false);
 
-	setupTable(response.summary, true, "summary-table", "Summary Statistics");
-	setupTable(response.full_results, true, "full-table", "Full Results");
-	setupTableFilter("full-table");
-	setupTableDownloads(response);
+	// setupTable(response.summary, true, "summary-table", "Summary Statistics");
+	// setupTable(response.full_results, true, "full-table", "Full Results");
+	// setupTableFilter("full-table");
+	// setupTableDownloads(response);
 
 	updateText(response);
 	generateAllFigureDownloadButtons();
@@ -71,7 +73,7 @@ function makeSections() {
 		{title: "Required Surge Capacity Map",            identifier: "results-maps",        showDefault: true},
 		{title: "System Load",                            identifier: "results-totalload",   showDefault: true},
 		{title: "Hospital Loads",                         identifier: "results-load",        showDefault: true},
-		{title: "Number of Active COVID Patients",        identifier: "results-active",      showDefault: false},
+		{title: "Hospital Occupancy",                     identifier: "results-occupancy",      showDefault: false},
 		{title: "Raw Results",                            identifier: "results-raw",         showDefault: false},
 	]
 

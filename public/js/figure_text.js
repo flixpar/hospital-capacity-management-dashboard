@@ -1,12 +1,12 @@
 export const transfersSankeyDescription = x => `
-This figure shows the relative numbers of patients transferred between locations over the selected time window. Ribbons connect locations that are sending patients (on the left) with locations that are receiving patients (on the right), where the relative widths represent the number of patients sent.
+This figure shows the relative numbers of patients transferred between locations over the selected time window. Ribbons connect locations that are sending patients (on the left) with locations that are receiving patients (on the right), where the relative widths represent the number of patients transfers.
 `;
 
 export const ridgeplotDescription = `
-This figure shows the net number of patients sent and received by each location over time. Areas shaded green represent times when a location is receiving more patients than it is sending (it has excess capacity), whereas areas shaded red represent times when a location is sending more patients than it is receiving (it is at or over capacity).
+This figure shows the net number of patients transfers and received by each location over time. Areas shaded green represent times when a location is receiving more patients than it is sending (it has excess capacity), whereas areas shaded red represent times when a location is sending more patients than it is receiving (it is at or over capacity).
 `;
 
-export const activeplotDescription = `
+export const occupancyplotDescription = `
 The following figures illustrate the number of hospitalized patients (per day) for each healthcare facility. The blue curve shows the number of patient without any transfers (the historical number of patients) and the green shows this number after the optimal transfers. The red line shows the reported capacity for each facility. Note that hospitals that are over capacity (blue curve above the red line) can expect that the load will be lightened with optimal transfers as patients are transferred out. Hospitals that are within capacity (blue curve under the red line) will receive additional patients and the green curve will be closer (but still under) the red line of capacity. The goal is to distribute the load within the systems instead of having some healthcare facilities be over-whelmed with patients while other hospitals have some capacity that can be used.
 `;
 
@@ -26,7 +26,7 @@ export const dashboardDescription = ``;
 
 export const transfersDescription = ``;
 
-export const admittedDescription = ``;
+export const admissionsDescription = ``;
 
 export const dischargedDescription = ``;
 

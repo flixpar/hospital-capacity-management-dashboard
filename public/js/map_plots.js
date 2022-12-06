@@ -40,54 +40,54 @@ export function createMap(rawdata, metric, transfers="both", add_description=tru
 	let plotTitle, colorbarLabel;
 	let dynamic;
 
-	const totalTransfers = d3.sum(rawdata.sent, x => d3.sum(x, y => d3.sum(y)));
+	const totalTransfers = d3.sum(rawdata.transfers, x => d3.sum(x, y => d3.sum(y)));
 
 	if (metric == "load") {
 		dynamic = true;
 		const data = extractDataDynamic(rawdata);
-		data1 = data.load_null;
+		data1 = data.load_notfr;
 		data2 = data.load;
-		colorscale = getLoadColorscale(data.load_null);
+		colorscale = getLoadColorscale(data.load_notfr);
 		plotTitle = "COVID Patient Occupancy";
 		colorbarLabel = "Normalized Occupancy";
 	} else if (metric == "max_load") {
 		dynamic = false;
 		const data = extractDataStatic(rawdata);
-		data1 = data.max_load_null;
+		data1 = data.max_load_notfr;
 		data2 = data.max_load;
-		colorscale = getLoadColorscale(data.max_load_null);
+		colorscale = getLoadColorscale(data.max_load_notfr);
 		plotTitle = "Peak COVID Patient Load";
 		colorbarLabel = "Occupancy";
 	} else if (metric == "mean_load") {
 		dynamic = false;
 		const data = extractDataStatic(rawdata);
-		data1 = data.mean_load_null;
+		data1 = data.mean_load_notfr;
 		data2 = data.mean_load;
-		colorscale = getLoadColorscale(data.mean_load_null);
+		colorscale = getLoadColorscale(data.mean_load_notfr);
 		plotTitle = "Mean COVID Patient Load";
 		colorbarLabel = "Normalized Load";
 	} else if (metric == "median_load") {
 		dynamic = false;
 		const data = extractDataStatic(rawdata);
-		data1 = data.median_load_null;
+		data1 = data.median_load_notfr;
 		data2 = data.median_load;
-		colorscale = getLoadColorscale(data.median_load_null);
+		colorscale = getLoadColorscale(data.median_load_notfr);
 		plotTitle = "Median COVID Patient Load";
 		colorbarLabel = "Normalized Load";
 	} else if (metric == "overflow_dynamic") {
 		dynamic = true;
 		const data = extractDataDynamic(rawdata);
-		data1 = data.overflow_null;
+		data1 = data.overflow_notfr;
 		data2 = data.overflow;
-		colorscale = getOverflowColorscale(data.overflow_null);
+		colorscale = getOverflowColorscale(data.overflow_notfr);
 		plotTitle = "Required Additional COVID Beds";
 		colorbarLabel = "Number of Additional Beds";
 	} else if (metric == "overflow" || metric == "overflow_static") {
 		dynamic = false;
 		const data = extractDataStatic(rawdata);
-		data1 = data.overflow_null;
+		data1 = data.overflow_notfr;
 		data2 = data.overflow;
-		colorscale = getOverflowColorscale(data.overflow_null);
+		colorscale = getOverflowColorscale(data.overflow_notfr);
 		plotTitle = "Required Surge Capacity";
 		colorbarLabel = "Required Surge Capacity (Bed-Days)";
 	} else {
@@ -97,9 +97,9 @@ export function createMap(rawdata, metric, transfers="both", add_description=tru
 
 	let links;
 	if (dynamic) {
-		links = createDynamicLinks(rawdata.sent, rawdata.config);
+		links = createDynamicLinks(rawdata.transfers, rawdata.config);
 	} else {
-		links = createStaticLinks(rawdata.sent, rawdata.config);
+		links = createStaticLinks(rawdata.transfers, rawdata.config);
 	}
 
 	if (transfers == "no_transfers") {
@@ -241,15 +241,15 @@ function generateDescription(response) {
 	const N = response.config.node_names.length;
 	const T = response.config.dates.length;
 
-	const overflow_sent_byloc = d3.range(N).map(i => response.active[i].map(x => Math.max(0, x - response.beds[i])));
-	const overflow_nosent_byloc = d3.range(N).map(i => response.active_null[i].map(x => Math.max(0, x - response.beds[i])));
-	const maxoverflow_transfers = d3.sum(d3.range(N).map(i => d3.max(overflow_sent_byloc[i]))).toFixed(0);
-	const maxoverflow_notransfers = d3.sum(d3.range(N).map(i => d3.max(overflow_nosent_byloc[i]))).toFixed(0);
+	const overflow_wtfr_byloc = d3.range(N).map(i => response.occupancy[i].map(x => Math.max(0, x - response.beds[i])));
+	const overflow_notfr_byloc = d3.range(N).map(i => response.occupancy_notfr[i].map(x => Math.max(0, x - response.beds[i])));
+	const maxoverflow_transfers = d3.sum(d3.range(N).map(i => d3.max(overflow_wtfr_byloc[i]))).toFixed(0);
+	const maxoverflow_notransfers = d3.sum(d3.range(N).map(i => d3.max(overflow_notfr_byloc[i]))).toFixed(0);
 	const maxoverflow_reduction = ((maxoverflow_notransfers - maxoverflow_transfers) / maxoverflow_notransfers * 100).toFixed(1);
 
-	const maxTotalActive = d3.max(d3.range(T).map(t => d3.sum(response.active_null, x => x[t])));
+	const maxTotalOccupancy = d3.max(d3.range(T).map(t => d3.sum(response.occupancy_notfr, x => x[t])));
 	const totalCapacity = d3.sum(response.beds);
-	const hasSystemOverflow = maxTotalActive > totalCapacity;
+	const hasSystemOverflow = maxTotalOccupancy > totalCapacity;
 
 	let insightsText = ``;
 	if (!hasSystemOverflow) {
@@ -1074,24 +1074,24 @@ class MapTooltip {
 		const capacity = this.response.beds[locIdx];
 
 		if (this.metric_name == "overflow_dynamic_notransfers") {
-			const required_capacity = this.response.active_null[locIdx][this.current_t];
+			const required_capacity = this.response.occupancy_notfr[locIdx][this.current_t];
 			const overflow = Math.max(0, required_capacity - capacity);
 			const textColor = this.colorscale(overflow);
 			this.textLine3.innerHTML = `Current Patients: <tspan fill="${textColor}">${required_capacity.toFixed(0)}</tspan>`;
 		} else if (this.metric_name == "overflow_dynamic_transfers") {
-			const required_capacity = this.response.active[locIdx][this.current_t];
+			const required_capacity = this.response.occupancy[locIdx][this.current_t];
 			const overflow = Math.max(0, required_capacity - capacity);
 			const textColor = this.colorscale(overflow);
 			this.textLine3.innerHTML = `Current Patients: <tspan fill="${textColor}">${required_capacity.toFixed(0)}</tspan>`;
 		} else if (this.metric_name == "load_notransfers") {
-			const active = this.response.active_null[locIdx][this.current_t];
-			const load = active / capacity;
+			const occupancy = this.response.occupancy_notfr[locIdx][this.current_t];
+			const load = occupancy / capacity;
 			const textColor = this.colorscale(load);
 			const loadText = (capacity == 0) ? "—" : ((load * 100).toFixed(0) + "%");
 			this.textLine3.innerHTML = `Occupancy: <tspan fill="${textColor}">${loadText}</tspan>`;
 		} else if (this.metric_name == "load_transfers") {
-			const active = this.response.active[locIdx][this.current_t];
-			const load = active / capacity;
+			const occupancy = this.response.occupancy[locIdx][this.current_t];
+			const load = occupancy / capacity;
 			const textColor = this.colorscale(load);
 			const loadText = (capacity == 0) ? "—" : ((load * 100).toFixed(0) + "%");
 			this.textLine3.innerHTML = `Occupancy: <tspan fill="${textColor}">${loadText}</tspan>`;
@@ -1224,27 +1224,27 @@ function extractDataStatic(rawdata) {
 	const N = rawdata.capacity.length;
 	const C = rawdata.capacity[0].length;
 
-	const max_load = d3.range(N).map(i => d3.max(rawdata.active[i]) / rawdata.capacity[i][C-1]);
-	const max_load_null = d3.range(N).map(i => d3.max(rawdata.active_null[i]) / rawdata.capacity[i][C-1]);
+	const max_load = d3.range(N).map(i => d3.max(rawdata.occupancy[i]) / rawdata.capacity[i][C-1]);
+	const max_load_notfr = d3.range(N).map(i => d3.max(rawdata.occupancy_notfr[i]) / rawdata.capacity[i][C-1]);
 
-	const mean_load = d3.range(N).map(i => d3.mean(rawdata.active[i]) / rawdata.capacity[i][C-1]);
-	const mean_load_null = d3.range(N).map(i => d3.mean(rawdata.active_null[i]) / rawdata.capacity[i][C-1]);
+	const mean_load = d3.range(N).map(i => d3.mean(rawdata.occupancy[i]) / rawdata.capacity[i][C-1]);
+	const mean_load_notfr = d3.range(N).map(i => d3.mean(rawdata.occupancy_notfr[i]) / rawdata.capacity[i][C-1]);
 
-	const median_load = d3.range(N).map(i => d3.median(rawdata.active[i]) / rawdata.capacity[i][C-1]);
-	const median_load_null = d3.range(N).map(i => d3.median(rawdata.active_null[i]) / rawdata.capacity[i][C-1]);
+	const median_load = d3.range(N).map(i => d3.median(rawdata.occupancy[i]) / rawdata.capacity[i][C-1]);
+	const median_load_notfr = d3.range(N).map(i => d3.median(rawdata.occupancy_notfr[i]) / rawdata.capacity[i][C-1]);
 
-	const overflow = d3.range(N).map(i => d3.sum(rawdata.active[i], x => Math.max(0,x-rawdata.capacity[i][C-1])));
-	const overflow_null = d3.range(N).map(i => d3.sum(rawdata.active_null[i], x => Math.max(0,x-rawdata.capacity[i][C-1])));
+	const overflow = d3.range(N).map(i => d3.sum(rawdata.occupancy[i], x => Math.max(0,x-rawdata.capacity[i][C-1])));
+	const overflow_notfr = d3.range(N).map(i => d3.sum(rawdata.occupancy_notfr[i], x => Math.max(0,x-rawdata.capacity[i][C-1])));
 
 	return {
 		max_load: max_load,
-		max_load_null: max_load_null,
+		max_load_notfr: max_load_notfr,
 		mean_load: mean_load,
-		mean_load_null: mean_load_null,
+		mean_load_notfr: mean_load_notfr,
 		median_load: median_load,
-		median_load_null: median_load_null,
+		median_load_notfr: median_load_notfr,
 		overflow: overflow,
-		overflow_null: overflow_null,
+		overflow_notfr: overflow_notfr,
 	};
 }
 
@@ -1254,28 +1254,28 @@ function extractDataDynamic(rawdata) {
 	const C = rawdata.capacity[0].length;
 
 	let load_data = [];
-	let load_null_data = [];
+	let load_notfr_data = [];
 	let overflow_data = [];
-	let overflow_null_data = [];
+	let overflow_notfr_data = [];
 
 	for (let i = 0; i < N; i++) {
-		load_data[i]      = d3.range(T).map(t => rawdata.active[i][t]      / rawdata.capacity[i][C-1]);
-		load_null_data[i] = d3.range(T).map(t => rawdata.active_null[i][t] / rawdata.capacity[i][C-1]);
-		overflow_data[i]      = d3.range(T).map(t => Math.max(0, rawdata.active[i][t]      - rawdata.capacity[i][C-1]));
-		overflow_null_data[i] = d3.range(T).map(t => Math.max(0, rawdata.active_null[i][t] - rawdata.capacity[i][C-1]));
+		load_data[i]      = d3.range(T).map(t => rawdata.occupancy[i][t]      / rawdata.capacity[i][C-1]);
+		load_notfr_data[i] = d3.range(T).map(t => rawdata.occupancy_notfr[i][t] / rawdata.capacity[i][C-1]);
+		overflow_data[i]      = d3.range(T).map(t => Math.max(0, rawdata.occupancy[i][t]      - rawdata.capacity[i][C-1]));
+		overflow_notfr_data[i] = d3.range(T).map(t => Math.max(0, rawdata.occupancy_notfr[i][t] - rawdata.capacity[i][C-1]));
 	}
 
 	return {
 		load: load_data,
-		load_null: load_null_data,
+		load_notfr: load_notfr_data,
 		overflow: overflow_data,
-		overflow_null: overflow_null_data,
+		overflow_notfr: overflow_notfr_data,
 	};
 }
 
-function createDynamicLinks(sent, config) {
+function createDynamicLinks(transfers, config) {
 	const N = config.node_names.length;
-	const T = sent[0][0].length;
+	const T = transfers[0][0].length;
 	let links = [];
 	for (let t = 0; t < T; t++) {
 		let l = [];
@@ -1286,7 +1286,7 @@ function createDynamicLinks(sent, config) {
 				const s2 = config.node_names[j];
 				const p1 = config.node_locations[s1];
 				const p2 = config.node_locations[s2];
-				const v = sent[i][j][t];
+				const v = transfers[i][j][t];
 				if (v < 0.1) continue;
 				let link = {
 					type: "LineString",
@@ -1303,15 +1303,15 @@ function createDynamicLinks(sent, config) {
 	return links;
 }
 
-function createStaticLinks(sent, config) {
+function createStaticLinks(transfers, config) {
 	const N = config.node_names.length;
 	let links = [];
 	for (let i = 0; i < N; i++) {
 	  for (let j = i+1; j < N; j++) {
 		if (i == j) continue;
 
-		const v1 = d3.sum(sent[i][j]);
-		const v2 = d3.sum(sent[j][i]);
+		const v1 = d3.sum(transfers[i][j]);
+		const v2 = d3.sum(transfers[j][i]);
 		if (v1 + v2 <= 0.2) continue;
 
 		let v = v1 - v2;
@@ -1365,7 +1365,7 @@ function loadGeometry(load_counties=false) {
 }
 
 function getExtent(config, geometries) {
-	if (config.extent.extent_type == "states" && geometries != null) {
+	if ("extent" in config && config.extent.extent_type == "states" && geometries != null) {
 		const selected_states = geometries.states.features.filter(s => {
 			return config.extent.extent_regions.indexOf(s.properties.name) >= 0
 		});
@@ -1451,12 +1451,12 @@ function getLoadColorscale(data) {
 }
 
 function getLinkWidthScale(links) {
-	const linksNull = (links == null);
-	const m = linksNull ? 1 : d3.max(links.flat(), l => l.weight);
+	const linksNoTfr = (links == null);
+	const m = linksNoTfr ? 1 : d3.max(links.flat(), l => l.weight);
 	const z = 0, r1 = 1.05, r2 = 8.5, r3 = 3.0, r4 = -0.06;
 	const q = 10.0;
 	function sizeScale(w) {
-		if (linksNull || w <= z) {
+		if (linksNoTfr || w <= z) {
 			return 0.0;
 		} else {
 			w = w / m;
