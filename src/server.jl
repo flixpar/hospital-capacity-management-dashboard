@@ -76,14 +76,7 @@ route("/api/data", method=GET) do
 	return json(response)
 end
 
-
-haskey(ENV, "GENIE_ENV") || (ENV["GENIE_ENV"] = "dev")
-if !haskey(ENV, "HOST")
-	ENV["HOST"] = (ENV["GENIE_ENV"] == "dev") ? "127.0.0.1" : "0.0.0.0"
-	host = (ENV["GENIE_ENV"] == "dev") ? "127.0.0.1" : "0.0.0.0"
+if abspath(PROGRAM_FILE) == @__FILE__
+	port = (haskey(ENV, "PORT") ? parse(Int, ENV["PORT"]) : 8000)
+	up(port, async = false)
 end
-
-port = (haskey(ENV, "PORT") ? parse(Int, ENV["PORT"]) : 8000)
-
-Genie.config.run_as_server = true
-Genie.startup(port, host)
