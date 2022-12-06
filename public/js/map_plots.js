@@ -906,6 +906,21 @@ function createMapTransfersSelect(rawdata, metric, transfersDefault, add_descrip
 	return selectContainer;
 }
 
+function createMapCapacitySelect(rawdata) {
+	if (document.getElementById("map-capacitylevel-select")) {return;}
+
+	const capacityNames = rawdata.config.capacity_names;
+	const options = capacityNames.map((c,i) => ({text: c, value: i}));
+
+	const selectContainer = createSelect(options, {id: "map-capacitylevel-select"});
+	let select = selectContainer.querySelector("select");
+
+	select.addEventListener("change", () => {
+	});
+
+	return selectContainer;
+}
+
 ////////////////////////////
 ///////// Tooltip //////////
 ////////////////////////////
