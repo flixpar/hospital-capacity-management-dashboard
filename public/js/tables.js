@@ -1,6 +1,6 @@
 export {setupTable, setupTableFilter, setupTableDownloads};
 import {getSection, createInfo, toTitlecase} from "./common.js";
-import {recentResponse} from "./patients.js";
+
 
 function setupTable(table_data, is_wide=false, table_id=null, title=null, replace=false) {
 
@@ -78,7 +78,7 @@ function setupTable(table_data, is_wide=false, table_id=null, title=null, replac
 	return table;
 }
 
-function setupTableFilter(table_id) {
+function setupTableFilter(recentResponse, table_id) {
 	let form = document.createElement("div");
 	let filterByLabel = document.createElement("label");
 	let filterBySelect = document.createElement("select");
@@ -99,7 +99,7 @@ function setupTableFilter(table_id) {
 	filterBySelect.appendChild(op3);
 	filterBySelect.id = "filter-by-select";
 
-	filterBySelect.addEventListener("change", updateFilterBy);
+	filterBySelect.addEventListener("change", () => updateFilterBy(recentResponse));
 
 	let filterBySelectWrapper = document.createElement("span");
 	filterBySelectWrapper.className = "select is-fullwidth";
@@ -114,7 +114,7 @@ function setupTableFilter(table_id) {
 	filterButton.className = "button is-info is-fullwidth";
 	filterButton.id = "filter-button";
 
-	filterButton.addEventListener("click", filterFullTable);
+	filterButton.addEventListener("click", () => filterFullTable(recentResponse));
 
 	let filterByField = wrapField(filterByLabel, filterBySelectWrapper, 3);
 	let filterButtonField = wrapField(filterButton, null, 3);
@@ -131,7 +131,7 @@ function setupTableFilter(table_id) {
 	table.parentElement.insertBefore(form, table);
 }
 
-function updateFilterBy() {
+function updateFilterBy(recentResponse) {
 	let temp = document.getElementById("filter-value-field");
 	if (temp !== null) {
 		temp.remove();
@@ -194,7 +194,7 @@ function createOptions(opts, select) {
 	}
 }
 
-function filterFullTable() {
+function filterFullTable(recentResponse) {
 	const filterby = document.getElementById("filter-by-select").value;
 	if (filterby === "none") {
 		setupTable(recentResponse.full_results, true, "full-table", "Full Results", true);

@@ -16,7 +16,7 @@ import {setupTable, setupTableFilter, setupTableDownloads} from "./tables.js";
 import {generateAllFigureDownloadButtons} from "./figuredl.js";
 
 let container = document.getElementById("result-area");
-export let recentResponse = null;
+let recentResponse = null;
 
 
 function handleResponse(response, status, xhr) {
@@ -52,7 +52,7 @@ function handleResponse(response, status, xhr) {
 
 	setupTable(response.summary, true, "summary-table", "Summary Statistics");
 	setupTable(response.full_results, true, "full-table", "Full Results");
-	setupTableFilter("full-table");
+	setupTableFilter(response, "full-table");
 	setupTableDownloads(response);
 
 	updateText(response);
