@@ -6,6 +6,7 @@ import {createJHHSDashboard} from "./dashboard.js";
 import {createTransfersBreakdownPlot} from "./transfers.js";
 import {createAdmissionsPlot} from "./admitted.js";
 import {createDischargedPlot} from "./discharged.js";
+import {createCapacityPlot} from "./capacity_plot.js";
 import {createCapacityTimeline} from "./capacity_timeline.js";
 import {createOverallLoadPlot, createLoadPlots} from "./loadplots.js";
 import {createTransfersSankey} from "./transfers_sankey.js";
@@ -45,6 +46,7 @@ function handleResponse(response, status, xhr) {
 	createTransfersSankey(response);
 	createTransfersBreakdownPlot(response);
 
+	createCapacityPlot(response);
 	createAdmissionsPlot(response);
 	createOccupancyPlot(response);
 	createOverallLoadPlot(response);
@@ -67,6 +69,7 @@ function makeSections() {
 	const sectionInfo = [
 		{title: "Info",                                   identifier: "casestudy-info",      showDefault: true},
 		{title: "Occupancy Timeline",                     identifier: "results-dashboard",   showDefault: true},
+		{title: "Capacity Timeline",                      identifier: "results-capacity",    showDefault: true},
 		{title: "Recommended Transfers",                  identifier: "results-transfers",   showDefault: true},
 		{title: "Metrics",                                identifier: "results-metrics",     showDefault: true},
 		{title: "Admissions",                             identifier: "results-admdis",      showDefault: true},
