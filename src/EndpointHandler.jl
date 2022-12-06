@@ -191,13 +191,13 @@ function generate_report()
 	objective = :minoverflow
 	constrain_integer = false
 	surge_preferences_dict = Dict{String,Any}("bmc" => "0", "hcgh" => "0", "jhh" => "0", "sh" => "0", "smh" => "0")
-	capacity_util = 0.93
+	capacity_util = 0.95
 	uncertainty_level = :default
 	los_param = "default_dist"
 	# start_date = today()
 	# end_date = today() + Month(1)
-	start_date = Date(2021, 1, 25)
-	end_date = Date(2021, 2, 25)
+	start_date = Date(2021, 12, 15)
+	end_date = Date(2022, 2, 15)
 
 	responses = Dict()
 	for patient_type in [:icu, :acute]
