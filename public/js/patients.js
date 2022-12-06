@@ -161,7 +161,7 @@ setDefaultDates();
 
 function setDefaultTransferBudget() {
 	const hospital_extensions = ["bmc", "hcgh", "jhh", "sh", "smh", "total"];
-	const bedtype = document.getElementById("form-patient-type").value;
+	const bedtype = document.getElementById("form-bed-type").value;
 
 	let defaultvalue = 10;
 	if (bedtype == "all") {
@@ -175,17 +175,18 @@ function setDefaultTransferBudget() {
 	hospital_extensions.forEach(h => {
 		document.getElementById(`form-transferbudget-${h}`).value = defaultvalue;
 	});
+	document.getElementById("form-transferbudget-total").value = 250;
 }
 setDefaultTransferBudget();
-document.getElementById("form-patient-type").addEventListener("change", setDefaultTransferBudget);
+document.getElementById("form-bed-type").addEventListener("change", setDefaultTransferBudget);
 
 function constrainPatientType() {
 	const scenario = document.getElementById("form-scenario").value;
 	if (scenario == "shortterm") {
-		document.getElementById("form-patient-type").value = "all";
-		document.getElementById("form-patient-type").disabled = true;
+		document.getElementById("form-bed-type").value = "all";
+		document.getElementById("form-bed-type").disabled = true;
 	} else {
-		document.getElementById("form-patient-type").disabled = false;
+		document.getElementById("form-bed-type").disabled = false;
 	}
 }
 constrainPatientType();
@@ -205,7 +206,7 @@ function validateForm() {
 	}
 
 	const scenario = document.getElementById("form-scenario").value;
-	const patient_type = document.getElementById("form-patient-type").value;
+	const patient_type = document.getElementById("form-bed-type").value;
 	const patient_type_valid = !(scenario == "shortterm" && patient_type != "all");
 	if (!patient_type_valid) {
 		alert("Scenario Short-Term only available for patient type All.")
@@ -235,7 +236,7 @@ function sendUpdateQuery() {
 	}
 	const data = {
 		scenario: $("#form-scenario")[0].value,
-		patient_type: $("#form-patient-type")[0].value,
+		patient_type: $("#form-bed-type")[0].value,
 		objective: $("#form-objective")[0].value,
 		integer: $("#form-integer")[0].value,
 		transferbudget: transferBudget,
@@ -265,7 +266,8 @@ const tooltip_content = {
 	"form-start-date": "Date to start the patient allocation model.",
 	"form-end-date"  : "Date to end the patient allocation model.",
 	"form-los"       : "Expected number of days that a patient will have to stay in the hospital.",
-	"form-patient-type": "Restrict focus to patients requiring a certain level of care.",
+	"form-patient-type": "Restrict focus to a certain patient population.",
+	"form-bed-type"  : "Restrict focus to beds of a certain type.",
 	"form-scenario": "Forecast scenario to use.",
 	"form-objective": "Primary objective for the optimization model.",
 	"form-weights": "Preferences for where to transfer patients to if the system runs out of capacity.",
