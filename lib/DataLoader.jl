@@ -47,11 +47,11 @@ function load_jhhs(
 	if start_date in data_range && end_date in data_range
 		data = realdata
 	elseif start_date in data_range && end_date in shortterm_range && scenario != :none
-		data = merge_sources(shortterm, realdata)
+		data = merge_sources(realdata, shortterm)
 	elseif start_date in shortterm_range && end_date in shortterm_range && scenario != :none
 		data = shortterm
 	elseif start_date in data_range && end_date in longterm_range && scenario != :none
-		data = merge_sources(longterm, realdata)
+		data = merge_sources(realdata, longterm)
 	elseif start_date in longterm_range && end_date in longterm_range && scenario != :none
 		data = longterm
 	else
@@ -202,11 +202,11 @@ function merge_sources(data1, data2)
 	active = fill(NaN, (N, T))
 	admitted = fill(NaN, (N, T))
 
-	active[:,data1_dates_t] = data1.active
 	active[:,data2_dates_t] = data2.active
+	active[:,data1_dates_t] = data1.active
 
-	admitted[:,data1_dates_t] = data1.admitted
 	admitted[:,data2_dates_t] = data2.admitted
+	admitted[:,data1_dates_t] = data1.admitted
 
 	interpolate_missing!(active)
 	interpolate_missing!(admitted)
