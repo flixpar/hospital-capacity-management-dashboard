@@ -151,7 +151,7 @@ function handle_patients_request(
 		use_rounding=false,
 	)
 
-	sims = PatientAllocationResults.admission_sims(data.start_date, data.end_date, scenario, patient_type)
+	sims = PatientAllocationResults.admission_sims(patient_type)
 
 	config = Dict(
 		:start_date => data.start_date,
@@ -221,7 +221,7 @@ function generate_report()
 	end
 
 	for patient_type in [:icu, :acute]
-		sims = PatientAllocationResults.admission_sims(start_date, end_date, scenario, patient_type)
+		sims = PatientAllocationResults.admission_sims(patient_type)
 		responses[patient_type][:admission_sims] = sims
 	end
 

@@ -227,33 +227,18 @@ function compute_active_null(initial, admitted, los_dist)
 	return active
 end
 
-function admission_sims(start_date, end_date, scenario, patient_type)
-
-	data = DataLoader.load_jhhs(scenario, patient_type, start_date-Day(7), start_date-Day(1))
-
-	initial = data.active[:,end]
+function admission_sims(patient_type)
+	selected_date = Date(2021, 1, 1)
+	data = DataLoader.load_jhhs(:none, patient_type, selected_date, selected_date+Day(1))
 	capacity = data.capacity
+
 	los_dist = DataLoader.los_dist_default(patient_type)
-	T = (end_date - start_date).value + 1
+	los_mean = mean(los_dist)
 
 	allowed_admissions_data = []
 	for (locIdx, hospital) in enumerate(data.node_names), (capIdx, capacitylevel) in enumerate(data.capacity_names)
-
-		i = initial[locIdx]
 		c = capacity[locIdx, capIdx]
-
-		allowed_admit = 0
-		while true
-			admitted_sim = fill(allowed_admit, T)
-			active_sim = compute_active_null(i, admitted_sim, los_dist)
-			if maximum(active_sim) > c
-				allowed_admit -= 1
-				break
-			else
-				allowed_admit += 1
-			end
-		end
-
+		allowed_admit = round(c / los_mean * 0.75, digits=1)
 		push!(allowed_admissions_data, (;hospital, bedtype=patient_type, capacitylevel, allowed_admit_perday_mean=allowed_admit))
 	end
 	allowed_admissions = DataFrame(allowed_admissions_data)
