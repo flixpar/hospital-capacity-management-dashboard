@@ -6,7 +6,7 @@ using Distributions
 using Dates
 using LinearAlgebra: diagm
 
-export load_jhhs
+export load_jhhs, load_jhhs_full
 export load_completedata
 export los_dist_default
 
@@ -115,6 +115,71 @@ function load_jhhs(
 		outdata = add_bcc(outdata)
 	end
 
+	return outdata
+end
+
+function load_jhhs_full(
+		scenario::String,
+		patient_type::String,
+		bed_type::String,
+	)
+	rawdata = deserialize(joinpath(@__DIR__, "../data/data.jlser"))
+
+	@assert patient_type == "adult+covid"
+
+	scenario = Symbol(scenario)
+	bed_type = Symbol(bed_type)
+
+	realdata = (;
+		occupancy = rawdata.realdata[bed_type].active,
+		admissions = rawdata.realdata[bed_type].admitted,
+		dates = rawdata.realdata[:meta].date_range,
+	)
+	shortterm = (;
+		occupancy = rawdata.shortterm[bed_type, scenario].active,
+		admissions = rawdata.shortterm[bed_type, scenario].admitted,
+		dates = rawdata.shortterm[:meta].date_range,
+	)
+	longterm = (;
+		occupancy = rawdata.longterm[bed_type, scenario].active,
+		admissions = rawdata.longterm[bed_type, scenario].admitted,
+		dates = rawdata.longterm[:meta].date_range,
+	)
+
+	# data = merge_sources(realdata, merge_sources(shortterm, longterm))
+	data = realdata
+
+	occupancy = data.occupancy
+	arrivals = max.(0.0, data.admissions)
+
+	capacity_levels = rawdata.capacity[bed_type]
+	capacity_perlevel = hcat(capacity_levels[:,1], diff(capacity_levels, dims=2))
+	capacity_names = rawdata.capacity[:meta].capacity_names
+
+	los_dists = [los_dist_default(bed_type) for _ in 1:size(occupancy,1)]
+
+	hospitals = rawdata.capacity[:meta].hospitals
+	hospital_locations = Dict(
+		"JHH"  => (lat = 39.2961773, long = -76.5939447),
+		"SMH"  => (lat = 38.9364687, long = -77.1091435),
+		"HCGH" => (lat = 39.2136187, long = -76.885917),
+		"BMC"  => (lat = 39.290101,  long = -76.5468383),
+		"SH"   => (lat = 38.9973285, long = -77.1105309),
+	)
+	region = (region_type="hospital_system", region_name="JHHS", region_fullname="Johns Hopkins Health System")
+
+	outdata = (;
+		occupancy,
+		arrivals,
+		capacity_levels,
+		capacity_perlevel,
+		los_dists,
+		dates=data.dates,
+		node_names=hospitals,
+		node_locations=hospital_locations,
+		region,
+		capacity_names,
+	)
 	return outdata
 end
 

@@ -6,12 +6,15 @@ using Dates
 using JuMP
 using DataFrames
 using LinearAlgebra
+using Distributions
 
 using DataLoader
 using PatientAllocation
+using HospitalDecisionOptimization
 import PatientAllocationResults
 
 export handle_patients_request
+export handle_decision_optimization
 export generate_report
 export get_all_data
 
@@ -181,6 +184,103 @@ function handle_patients_request(
 		:admitted => permutedims(data.admitted, (2,1)),
 		:admission_sims => sims,
 		:total_patients => sum(data.initial) + sum(data.admitted),
+		:config => config,
+	)
+	return outcomes
+end
+
+function handle_decision_optimization(
+		start_date::Date,
+		end_date::Date,
+
+		patient_type::String,
+		bed_type::String,
+
+		forecast_scenario::String,
+
+		decision_targets::Array{String,1},
+		capacity_type::String,
+		constrain_integer::Bool,
+
+		transferbudget_dict::Dict{String,Any},
+		objective_weights_dict::Dict{String,Any},
+		capacity_util::Float64,
+	)
+	@info "Optimize hospital decisions"
+	@info "Dates: $start_date to $end_date"
+
+	forecast_scenario = "none"
+
+	data = load_jhhs_full(forecast_scenario, patient_type, bed_type)
+
+	s = findfirst(==(start_date), data.dates)
+	t = findfirst(==(end_date), data.dates)
+	Topt = collect(s:t)
+
+	N = size(data.arrivals, 1)
+	T = length(Topt)
+
+	data = merge(
+		data, (;
+			capacity_levels = data.capacity_levels .* capacity_util,
+			capacity_perlevel = data.capacity_perlevel .* capacity_util,
+		)
+	)
+
+	capacitycosts = [parse(Float64, objective_weights_dict[lowercase(h)])*2 + 0.05 for h in data.node_names]
+
+	transferbudget = TransferBudgets(
+		N, T,
+		total = parse(Int, transferbudget_dict["total"]),
+		perday = tryparse(Int, get(transferbudget_dict, "byday", "")),
+		perhospitalday = [parse(Int, transferbudget_dict[lowercase(k)]) for k in data.node_names],
+	)
+
+	model_params = ModelParams(decision_targets, capacity_type)
+	obj_params = ObjectiveParams(N, T, transfercosts=2, capacitycosts=capacitycosts)
+	solver_params = SolverParams(integer=constrain_integer)
+
+	model = optimize_decisions(
+		data.arrivals,
+		data.capacity_perlevel,
+		data.los_dists,
+		Topt,
+		transferbudget,
+		model_params,
+		obj_params,
+		solver_params,
+	)
+	decisions = unpack_decisions(model)
+
+	arrivals = data.arrivals[:,Topt]
+	admissions = decisions.admissions
+
+	occupancy_notfr = data.occupancy[:,Topt]
+	occupancy = decisions.occupancy
+
+	equilibrium_admissions = data.capacity_levels ./ mean(data.los_dists[1])
+
+	fmt(arr) = permutedims(arr, reverse(1:ndims(arr)))
+	config = Dict(
+		:dates => data.dates[Topt],
+		:node_names => data.node_names,
+		:node_locations => data.node_locations,
+		:capacity_names => data.capacity_names,
+		:region => data.region,
+	)
+	outcomes = Dict(
+		:transfers => fmt(decisions.transfers),
+
+		:capacity => fmt(decisions.capacity),
+		:capacity_level => fmt(decisions.capacity_level),
+		:capacity_perlevel => fmt(data.capacity_perlevel),
+
+		:admissions => fmt(admissions),
+		:arrivals => fmt(arrivals),
+
+		:occupancy => fmt(occupancy),
+		:occupancy_notfr => fmt(occupancy_notfr),
+
 		:config => config,
 	)
 	return outcomes

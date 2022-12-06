@@ -19,6 +19,10 @@ route("/patients") do
 	serve_static_file("html/patients.html")
 end
 
+route("/recommendations") do
+	serve_static_file("html/recommendations.html")
+end
+
 route("/data") do
 	serve_static_file("html/data.html")
 end
@@ -59,6 +63,43 @@ route("/api/patients", method=POST) do
 		transfer_budget, surge_preferences,
 		capacity_util, uncertainty_level, los,
 		start_date, end_date,
+	)
+	return json(response)
+end
+
+route("/api/recommendations", method=POST) do
+	input = jsonpayload()
+
+	start_date = Date(input["start_date"])
+	end_date   = Date(input["end_date"])
+
+	patient_type = input["patient_type"]
+	bed_type = input["bed_type"]
+	forecast_scenario = "none" # input["forecast_scenario"]
+
+	decision_targets = (input["objective"] == "capacity+transfers") ? ["transfers", "capacity"] : [input["objective"]]
+	capacity_type = input["capacity_type"]
+	constrain_integer = (input["integer"] == "true")
+
+	transfer_budget = Dict(input["transferbudget"])
+	objective_weights = Dict(input["surgepreferences"])
+
+	capacity_util = parse(Float64, input["utilization"])
+
+	uncertainty_level = input["uncertaintylevel"]
+	los = input["los"]
+
+	response = handle_decision_optimization(
+		start_date, end_date,
+		patient_type, bed_type,
+		forecast_scenario,
+
+		decision_targets,
+		capacity_type,
+		constrain_integer,
+
+		transfer_budget, objective_weights,
+		capacity_util,
 	)
 	return json(response)
 end
