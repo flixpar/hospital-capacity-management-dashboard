@@ -5,6 +5,7 @@ using LinearAlgebra
 using Dates
 using Distributions
 using Serialization
+using Statistics
 
 include("DataLoader.jl")
 
@@ -227,24 +228,28 @@ function compute_active_null(initial, admitted, los_dist)
 	return active
 end
 
-function admission_sims(patient_type)
-	selected_date = Date(2021, 1, 1)
-	data = DataLoader.load_jhhs(:none, patient_type, selected_date, selected_date+Day(6))
+function admission_targets(patient_type, start_date=Date(2021, 1, 1), end_date=nothing)
+	if isnothing(end_date)
+		end_date = start_date + Day(6)
+	end
+
+	data = DataLoader.load_jhhs(:none, patient_type, start_date, end_date)
 	capacity = data.capacity
 
 	los_dist = DataLoader.los_dist_default(patient_type)
 	los_mean = mean(los_dist)
 
 	allowed_admissions_data = []
-	for (locIdx, hospital) in enumerate(data.node_names), (capIdx, capacitylevel) in enumerate(data.capacity_names)
+	for (locIdx, hospital) in enumerate(data.node_names), (capIdx, capacity_level) in enumerate(data.capacity_names)
 		c = capacity[locIdx, capIdx]
-		allowed_admit = round(c / los_mean * 0.75, digits=1)
-		push!(allowed_admissions_data, (;hospital, bedtype=patient_type, capacitylevel, allowed_admit_perday_mean=allowed_admit))
+		allowed_admit = 0.9c / los_mean
+		allowed_admit = max(0, allowed_admit)
+		push!(allowed_admissions_data, (;hospital, bedtype=patient_type, capacity_level, allowed_admit_perday_mean=allowed_admit))
 	end
 	allowed_admissions = DataFrame(allowed_admissions_data)
-	allowed_admissions_wide = unstack(allowed_admissions, :capacitylevel, :hospital, :allowed_admit_perday_mean)
+	allowed_admissions_wide = unstack(allowed_admissions, :capacity_level, :hospital, :allowed_admit_perday_mean)
 
-	current_admissions = sum(data.admitted, dims=2) ./ 7
+	current_admissions = mean(data.admitted, dims=2)
 
 	return (
 		table = allowed_admissions_wide,
