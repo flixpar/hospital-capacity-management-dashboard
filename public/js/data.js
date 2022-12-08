@@ -174,6 +174,11 @@ function updateData() {
 	vm.status = "loading";
 	fetch(`/api/data?scenario=${scenario}&patienttype=${patienttype}`)
 		.then(response => response.json())
+		.then(response => {
+			const nodeNameMap = {"BMC": "H1", "HCGH": "H2", "JHH": "H3", "SH": "H4", "SMH": "H5"};
+			response.hospitals = response.hospitals.map((n) => nodeNameMap[n]);
+			return response;
+		})
 		.then(data => {
 			console.log(data);
 			vm.$data.response = data;
