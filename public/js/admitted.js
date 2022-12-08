@@ -79,11 +79,12 @@ function makeAdmissionsPlot(response) {
 			return 1;
 		}
 		return (response.config.node_names[i] <= response.config.node_names[j]) ? -1 : 1;
-	});	let tooltips = [];
+	});
+	let tooltips = [];
 	for (let i = 0; i < N; i++) {
 		const j = ind[i];
 		let g = svg.append("g").attr("transform", `translate(${admissionsMargin.left + (i*plotSize.width)}, ${admissionsMargin.top})`);
-		g,tooltips[i] = plotAdmissions(g, xScale, yScale, data, response, j, plotSize, plotMargin);
+		tooltips[i] = plotAdmissions(g, xScale, yScale, data, response, j, plotSize, plotMargin);
 	}
 	for (let i = 0; i < N; i++) {
 		let g = svg.append("g").attr("transform", `translate(${admissionsMargin.left + (i*plotSize.width)}, ${admissionsMargin.top})`);
@@ -264,17 +265,13 @@ function computeAdmissionsData(response) {
 			const d = new Date(Date.parse(response.config.dates[t]));
 			admissions_data[i][t] = {
 				"date": d,
-				"value": (
-					response.admissions[i][t]
-					- d3.sum(nodeInds.map(j => response.transfers[i][j][t]))
-					+ d3.sum(nodeInds.map(j => response.transfers[j][i][t]))
-				),
+				"value": response.admissions[i][t],
 				"data_type": "With Transfers",
 				"node_name": response.config.node_names[i],
 			};
 			admissions_notfr_data[i][t] = {
 				"date": d,
-				"value": response.admissions[i][t],
+				"value": response.arrivals[i][t],
 				"data_type": "Without Transfers",
 				"node_name": response.config.node_names[i],
 			};
