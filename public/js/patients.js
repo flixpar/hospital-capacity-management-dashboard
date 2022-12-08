@@ -67,6 +67,7 @@ function makeSections() {
 	const sectionInfo = [
 		{title: "Info",                                   identifier: "casestudy-info",      showDefault: true},
 		{title: "Occupancy Timeline",                     identifier: "results-dashboard",   showDefault: true},
+		{title: "Capacity Timeline",                      identifier: "results-capacity",    showDefault: true},
 		{title: "Recommended Transfers",                  identifier: "results-transfers",   showDefault: true},
 		{title: "Metrics",                                identifier: "results-metrics",     showDefault: true},
 		{title: "Admissions",                             identifier: "results-admdis",      showDefault: true},

@@ -20,7 +20,7 @@ export {createCapacityTimeline, makeCapacityTimeline};
 
 
 function createCapacityTimeline(response, add_description=true) {
-	const section = getSection("results-dashboard");
+	const section = getSection("results-capacity");
 	if (add_description) {
 		let description = document.createElement("p");
 		description.innerHTML = capacityTimelineDescription;
