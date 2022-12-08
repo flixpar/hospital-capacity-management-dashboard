@@ -14,6 +14,7 @@ const tfrBarColors = {
 	"H5": "#B6C2D9",
 	"default": "blue",
 };
+const tfrFigureFont = "Helvetica, Arial, sans-serif";
 
 import {makeLegend} from "./common.js";
 import {transfersDescription} from "./figure_text.js";
@@ -44,7 +45,7 @@ function createTransfersBreakdownPlot(response, add_description=true) {
 
 function makeTransfersBreakdownPlot(response) {
 	let svg = d3.create("svg").attr("viewBox", [0, 0, tfrFigureSize.width, tfrFigureSize.height]);
-	const plotMargin = {left: 50, right: 4, top: 5, bottom: 10};
+	const plotMargin = {left: 50, right: 4, top: 5, bottom: 20};
 
 	const N = response.config.node_names.length;
 
@@ -62,7 +63,7 @@ function makeTransfersBreakdownPlot(response) {
 
 	svg.append("text")
 		.attr("transform", `translate(10,${tfrFigureSize.height/2 + 40}) rotate(-90)`)
-		.attr("font-family", "monospace")
+		.attr("font-family", tfrFigureFont)
 		.attr("font-size", 10)
 		.text("Origin Hospital");
 
@@ -91,7 +92,7 @@ function makeTransfersBreakdownSubplot(svg, response, locIdx, plotSize) {
 
 	const xAxis = g => g
 	.attr("transform", `translate(0,${plotSize.height})`)
-	.style("font-family", "monospace")
+	.style("font-family", tfrFigureFont)
 	.style("font-size", "8px")
 	.call(d3.axisBottom(x)
 		.ticks(d3.utcWeek.every(1))
@@ -111,7 +112,7 @@ function makeTransfersBreakdownSubplot(svg, response, locIdx, plotSize) {
 
 	const yAxis = svg => svg
 	.attr("transform", `translate(0,0)`)
-	.style("font-family", "monospace")
+	.style("font-family", tfrFigureFont)
 	.style("font-size", "8px")
 	.call(d3.axisRight(y)
 		.ticks(4)
@@ -138,16 +139,24 @@ function makeTransfersBreakdownSubplot(svg, response, locIdx, plotSize) {
 	svg.append("g")
 		.call(yAxis);
 
-	svg.append("text")
+	let ylabel = svg.append("text")
 		.style("text-anchor", "center")
-		.style("font-family", "monospace")
+		.style("font-family", "Helvetica, Arial, sans-serif")
 		.style("font-size", "8px")
-		.attr("transform", `translate(-30,${y(maxY/2)+20}) rotate(-90)`)
+		.style("text-align", "center")
+		.attr("transform", `translate(-30,${y(maxY/2)+20}) rotate(-90)`);
+	ylabel.append("tspan")
+		.attr("x", 0)
+		.attr("dy", 0)
+		.text("Outgoing");
+	ylabel.append("tspan")
+		.attr("x", 0)
+		.attr("dy", "1.2em")
 		.text("Transfers");
 
 	svg.append("text")
 		.style("text-anchor", "center")
-		.style("font-family", "monospace")
+		.style("font-family", tfrFigureFont)
 		.style("font-size", "9px")
 		.attr("transform", `translate(-60,${y(maxY/2)})`)
 		.text(response.config.node_names[locIdx]);
@@ -205,12 +214,12 @@ function makeTransfersBreakdownXAxis(svg, response, plotSize) {
 		.range([0, plotSize.width]);
 
 	const xAxis = g => g
-	.style("font-family", "monospace")
+	.style("font-family", tfrFigureFont)
 	.style("font-size", "8px")
 	.call(d3.axisBottom(x)
 		.ticks(d3.utcWeek.every(1))
 		.tickSize(0)
-		.tickFormat(d3.timeFormat("%m/%d"))
+		.tickFormat(d3.timeFormat("%m/%d/%y"))
 	)
 	.call(g => g.select(".domain").remove())
 	.call(g => g.selectAll(".tick line")
