@@ -229,7 +229,7 @@ end
 
 function admission_sims(patient_type)
 	selected_date = Date(2021, 1, 1)
-	data = DataLoader.load_jhhs(:none, patient_type, selected_date, selected_date+Day(1))
+	data = DataLoader.load_jhhs(:none, patient_type, selected_date, selected_date+Day(6))
 	capacity = data.capacity
 
 	los_dist = DataLoader.los_dist_default(patient_type)
