@@ -12,7 +12,7 @@ import {createOverallLoadPlot, createLoadPlots} from "./loadplots.js";
 import {createTransfersSankey} from "./transfers_sankey.js";
 import {createRidgePlot} from "./ridgeplot.js";
 import {createOccupancyPlot} from "./occupancyplot.js";
-import {createStatsSummary, createSurgeCapacityMetrics, createAdmissionSimsTable} from "./metrics.js";
+import {createStatsSummary, createSurgeCapacityMetrics, createAdmissionTargetsTable} from "./metrics.js";
 import {setupTable, setupTableFilter, setupTableDownloads} from "./tables.js";
 import {generateAllFigureDownloadButtons} from "./figuredl.js";
 
@@ -53,7 +53,7 @@ function handleResponse(response, status, xhr) {
 	createOverallLoadPlot(response);
 	createLoadPlots(response);
 
-	// createAdmissionSimsTable(response, false);
+	createAdmissionTargetsTable(response, true);
 
 	// setupTable(response.summary, true, "summary-table", "Summary Statistics");
 	// setupTable(response.full_results, true, "full-table", "Full Results");
@@ -368,6 +368,13 @@ function censorResponse(response) {
 
 	response.config.region.region_name = "HS";
 	response.config.region.region_fullname = "Our Parner Hospital System";
+
+	for (let i = 0; i < hospitals.length; i++) {
+		let h_in = hospitals[i];
+		let h_out = hospitalConverter[h_in];
+		response.admission_targets.table[h_out] = response.admission_targets.table[h_in];
+		delete response.admission_targets.table[h_in];
+	}
 
 	return response;
 }

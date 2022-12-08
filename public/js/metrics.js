@@ -1,4 +1,4 @@
-export {createStatsSummary, createSurgeCapacityMetrics, createAdmissionSimsTable, createAdmissionSimsTableOnly};
+export {createStatsSummary, createSurgeCapacityMetrics, createAdmissionTargetsTable, createAdmissionTargetsTableRaw};
 
 import {getSection, createSelect} from "./common.js";
 import {metricsDescription} from "./figure_text.js";
@@ -196,7 +196,7 @@ function createMetricsCapacitySelect(rawdata) {
 	section.appendChild(selectContainer);
 }
 
-function createAdmissionSimsTable(response, includeCurrent=true) {
+function createAdmissionTargetsTable(response, includeCurrent=true) {
 	const sectionName = "section-results-metrics";
 
 	let title = document.createElement("p");
@@ -204,13 +204,13 @@ function createAdmissionSimsTable(response, includeCurrent=true) {
 	title.style.fontWeight = "bold";
 	document.getElementById(sectionName).appendChild(title);
 
-	let table = createAdmissionSimsTableOnly(response, sectionName, includeCurrent);
+	let table = createAdmissionTargetsTableRaw(response, sectionName, includeCurrent);
 	table.style.marginLeft = "auto";
 	table.style.marginRight = "auto";
 }
 
-function createAdmissionSimsTableOnly(response, sectionName, includeCurrent=true) {
-	const tableData = response.admission_sims.table;
+function createAdmissionTargetsTableRaw(response, sectionName, includeCurrent=true) {
+	const tableData = response.admission_targets.table;
 
 	let table = document.createElement("table");
 	table.className = "table is-hoverable";
@@ -227,15 +227,15 @@ function createAdmissionSimsTableOnly(response, sectionName, includeCurrent=true
 	let blank = document.createElement("th");
 	tableHeaderRow.appendChild(blank);
 
-	for (const capacitylevel of tableData.capacitylevel) {
+	for (const capacity_level of tableData.capacity_level) {
 		let th = document.createElement("th");
-		th.textContent = capacitylevel;
+		th.textContent = capacity_level;
 		tableHeaderRow.appendChild(th);
 	}
 
 	if (includeCurrent) {
 		let elem = document.createElement("th");
-		elem.textContent = "Current";
+		elem.textContent = "Average";
 		tableHeaderRow.appendChild(elem);
 	}
 
@@ -247,12 +247,14 @@ function createAdmissionSimsTableOnly(response, sectionName, includeCurrent=true
 		nameEntry.textContent = h;
 		row.appendChild(nameEntry);
 
-		const currentLevel = response.admission_sims.current_admissions[i].toFixed(0);
+		const currentLevel = +response.admission_targets.current_admissions[i].toFixed(1);
 
 		for (const v of tableData[h]) {
 			let td = document.createElement("td");
-			td.textContent = (v == -1) ? 0 : v;
-			td.style.color = (v < currentLevel) ? "red" : "green";
+			td.textContent = (v == -1) ? 0 : +v.toFixed(1);
+			if (includeCurrent) {
+				td.style.color = (v < currentLevel) ? "red" : "green";
+			}
 			row.appendChild(td);
 		}
 

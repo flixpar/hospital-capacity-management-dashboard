@@ -1,6 +1,6 @@
 import {createCapacityTimeline} from "./capacity_timeline.js";
 import {createTransfersBreakdownPlot} from "./transfers.js";
-import {createAdmissionSimsTableOnly} from "./metrics.js";
+import {createAdmissionTargetsTableRaw} from "./metrics.js";
 
 
 function handleResponse(response) {
@@ -20,8 +20,8 @@ function handleResponse(response) {
 	createCapacityTimeline(response.icu, false);
 	createTransfersBreakdownPlot(response.icu, false);
 
-	createAdmissionSimsTableOnly(response.icu, "admission-sims-icu-table-container");
-	createAdmissionSimsTableOnly(response.acute, "admission-sims-acute-table-container");
+	createAdmissionTargetsTableRaw(response.icu, "admission-sims-icu-table-container");
+	createAdmissionTargetsTableRaw(response.acute, "admission-sims-acute-table-container");
 
 	document.getElementById("results-container").remove();
 }
