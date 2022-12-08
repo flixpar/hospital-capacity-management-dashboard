@@ -154,7 +154,7 @@ function handle_patients_request(
 		use_rounding=false,
 	)
 
-	sims = PatientAllocationResults.admission_sims(patient_type)
+	sims = PatientAllocationResults.admission_targets(patient_type, start_date, end_date)
 
 	config = Dict(
 		:start_date => data.start_date,
@@ -182,7 +182,7 @@ function handle_patients_request(
 		:occupancy => permutedims(results.active_patients, (2,1)),
 		:occupancy_notfr => permutedims(results.active_patients_nosent, (2,1)),
 		:admissions => permutedims(data.admitted, (2,1)),
-		:admission_sims => sims,
+		:admission_targets => sims,
 		:total_patients => sum(data.initial) + sum(data.admitted),
 		:config => config,
 	)
@@ -258,7 +258,8 @@ function handle_decision_optimization(
 	occupancy_notfr = data.occupancy[:,Topt]
 	occupancy = decisions.occupancy
 
-	equilibrium_admissions = data.capacity_levels ./ mean(data.los_dists[1])
+	# equilibrium_admissions = data.capacity_levels ./ mean(data.los_dists[1])
+	admission_targets = PatientAllocationResults.admission_targets(Symbol(bed_type), start_date, end_date)
 
 	fmt(arr) = permutedims(arr, reverse(1:ndims(arr)))
 	config = Dict(
@@ -281,6 +282,8 @@ function handle_decision_optimization(
 
 		:occupancy => fmt(occupancy),
 		:occupancy_notfr => fmt(occupancy_notfr),
+
+		:admission_targets => admission_targets,
 
 		:config => config,
 	)
@@ -322,8 +325,8 @@ function generate_report()
 	end
 
 	for patient_type in [:icu, :acute]
-		sims = PatientAllocationResults.admission_sims(patient_type)
-		responses[patient_type][:admission_sims] = sims
+		adm_targets = PatientAllocationResults.admission_targets(patient_type, start_date, end_date)
+		responses[patient_type][:admission_targets] = adm_targets
 	end
 
 	responses[:meta] = (;
