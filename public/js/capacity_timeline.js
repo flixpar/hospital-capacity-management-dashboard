@@ -296,7 +296,7 @@ function createTransfersSelect(response) {
 		oldFig.replaceWith(fig);
 	});
 
-	const section = getSection("results-dashboard");
+	const section = getSection("results-capacity");
 	section.appendChild(selectContainer);
 }
 
