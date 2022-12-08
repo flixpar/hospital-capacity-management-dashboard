@@ -78,36 +78,11 @@ function optimize_decisions(
 
 	# occupancy
 	@expression(model, admissions[i=1:N, t=1:T], arrivals[i,t] + sum(transfers_[:,i,t]) - sum(transfers_[i,:,t]))
-	# @expression(model, discharges[i=1:N, t=1:T], sum(L[i,t-tt+1] * admissions[i,tt] for tt in 1:t))
 	@expression(model, discharges[i=1:N, t=1:T], dot(admissions[i,1:t], L[i,t:-1:1]))
 	@expression(model, occupancy[i=1:N, t=1:T], sum(admissions[i,1:t]) - sum(discharges[i,1:t]))
 
 	# capacity
 	@expression(model, capacity[i=1:N, t=Topt], sum(capacity_level[i,t,c] * capacity_perlevel[i,c] for c in 1:C))
-
-	### VERSION 1 ###
-
-	# @constraint(model, [i=1:N, t in Topt, c=1:C], capacity_level[i,t,c] => {occupancy[i,t] >= capacity_levels[i,c]})
-	# @constraint(model, [i=1:N, t in Topt, c=1:C], !capacity_level[i,t,c] => {occupancy[i,t] <= capacity_levels[i,c]})
-
-	### VERSION 2 ###
-
-	# M = 1000 # upper bound on |occ-cap|+1
-	# ϵ = 0.001
-	# @constraint(model, [i=1:N, t in Topt, c=1:C], occupancy[i,t] ≥ capacity_levels[i,c] + M*capacity_level[i,t,c] - M)
-	# @constraint(model, [i=1:N, t in Topt, c=1:C], occupancy[i,t] ≤ capacity_levels[i,c] + M*capacity_level[i,t,c] - ϵ)
-
-	# c1
-	# occ < cap => -z>=MS-M => S=0
-	# occ > cap => z>=MS-M => uncon
-	# occ = cap => 0>=MS-M => uncon
-
-	# c2
-	# occ < cap => -z<=MS-e => uncon
-	# occ > cap => z<=MS-e => S=1
-	# occ = cap => 0<=MS-e => S=1
-
-	### VERSION 3 ###
 
 	@constraint(model, [i=1:N, t in Topt], capacity[i,t] ≥ occupancy[i,t])
 	@constraint(model, [i=1:N, t in Topt, c=1:C-1], capacity_level[i,t,c] ≥ capacity_level[i,t,c+1])
@@ -129,7 +104,6 @@ function optimize_decisions(
 end
 
 function discretize_los(los::Array{<:Distribution,1}, T::Int)
-	# L = [1.0 - cdf(l, t) for l in los, t in 0:T]
 	L = [pdf(l, t) for l in los, t in 0:T]
 	return L
 end
