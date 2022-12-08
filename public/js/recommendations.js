@@ -29,6 +29,7 @@ function handleResponse(response, status, xhr) {
 	response = censorResponse(response);
 
 	recentResponse = response;
+	console.log(response);
 
 	makeSections();
 

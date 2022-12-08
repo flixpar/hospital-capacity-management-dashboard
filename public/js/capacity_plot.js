@@ -35,6 +35,9 @@ function createCapacityPlot(response) {
 			title: "Capacity",
 			rangemode: "tozero",
 		},
+		font: {
+			family: "Helvetica, Arial, sans-serif",
+		}
 	};
 
 	const config = {
