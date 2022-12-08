@@ -7,6 +7,11 @@ const tfrBarColors = {
 	"SH":   "#95B46A",
 	"SMH":  "#B6C2D9",
 	"BCC":  "#9370DB",
+	"H1": "#006C67",
+	"H2": "#B9314F",
+	"H3": "#454E9E",
+	"H4": "#95B46A",
+	"H5": "#B6C2D9",
 	"default": "blue",
 };
 

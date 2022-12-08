@@ -389,7 +389,7 @@ function makeLoadPlotsLegend(svg, location_names, totalWidth) {
 
 	const maxNameLength = d3.max(location_names, x => x.length);
 	const rowHeight = 20;
-	const colWidth = (maxNameLength * 16) + 10 + 10;
+	const colWidth = (maxNameLength * 16) + 10 + 10 + 25;
 
 	const maxCols = Math.floor(totalWidth / colWidth);
 	const nRows = Math.ceil(N / maxCols);

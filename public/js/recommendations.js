@@ -26,6 +26,7 @@ function handleResponse(response, status, xhr) {
 	container.innerHTML = "";
 
 	response.beds = response.capacity_levels.map(x => x[0]);
+	response = censorResponse(response);
 
 	recentResponse = response;
 
@@ -301,7 +302,9 @@ function updateText(response) {
 
 	const isMobile = (window.innerWidth < 600);
 
-	let mapTitle = `COVID-19 Capacity, Occupancy, and Optimal Transfers in JHHS`;
+	const regionName = response.config.region.region_name;
+
+	let mapTitle = `COVID-19 Capacity, Occupancy, and Optimal Transfers in ${regionName}`;
 	if (isMobile) {mapTitle = `COVID-19 Occupancy, and Optimal Transfers`;}
 	for (let map of document.querySelectorAll(".hospitalsmap")) {
 		const metric = map.id.substring(13);
@@ -313,7 +316,7 @@ function updateText(response) {
 	}
 
 	for (let elem of document.querySelectorAll(".region-text")) {
-		elem.textContent = "JHHS";
+		elem.textContent = regionName;
 	}
 
 	for (let elem of document.querySelectorAll(".fill-value")) {
@@ -336,4 +339,35 @@ function updateText(response) {
 		const info = createInfo(null, text);
 		elem.replaceWith(info);
 	}
+}
+
+function censorForm() {
+	let hospitals = ["bmc", "hcgh", "jhh", "sh", "smh"];
+	for (let i = 0; i < hospitals.length; i++) {
+		let h = hospitals[i];
+		document.querySelector(`label[for="form-transferbudget-${h}"]`).innerHTML = `H${i+1}`;
+		document.querySelector(`label[for="form-surgepreferences-${h}"]`).innerHTML = `H${i+1}`;
+	}
+}
+censorForm();
+
+function censorResponse(response) {
+	let hospitals = ["BMC", "HCGH", "JHH", "SH", "SMH"];
+	let hospitalConverter = {};
+	for (let i = 0; i < hospitals.length; i++) {
+		hospitalConverter[hospitals[i]] = `H${i+1}`;
+	}
+
+	response.config.node_names = response.config.node_names.map((n) => hospitalConverter[n]);
+
+	for (let i = 0; i < response.config.node_names.length; i++) {
+		let h_in = hospitals[i];
+		let h_out = hospitalConverter[h_in];
+		response.config.node_locations[h_out] = response.config.node_locations[h_in];
+	}
+
+	response.config.region.region_name = "HS";
+	response.config.region.region_fullname = "Our Parner Hospital System";
+
+	return response;
 }
