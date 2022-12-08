@@ -170,22 +170,35 @@ function makeCapacityTimelineAxis(svg, response, subplotSize) {
 		.domain(d3.extent(dates))
 		.range([0, subplotSize.width]);
 
+	let ticksInterval = 60;
+	if (response.config.dates.length < 60) {
+		ticksInterval = d3.utcDay.every(1);
+	} else if (response.config.dates.length < 120) {
+		ticksInterval = d3.utcDay.every(2);
+	} else if (response.config.dates.length < 365) {
+		ticksInterval = d3.utcWeek.every(1);
+	} else {
+		ticksInterval = d3.utcMonth.every(1);
+	}
+
 	const xAxis = g => g
-		.attr("transform", `translate(${capacityTimelinePlotMargins.left},${capacityTimelinePlotSize.height-capacityTimelinePlotMargins.bottom})`)
+		.attr("transform", `translate(${capacityTimelinePlotMargins.left},${capacityTimelinePlotSize.height-10})`)
 		.style("font-family", "monospace")
 		.style("font-size", "8px")
 		.call(d3.axisBottom(xScale)
-			// .ticks(d3.utcWeek.every(1))
-			.ticks(d3.utcDay.every(1))
-			.tickSize(-capacityTimelinePlotSize.height)
+			.ticks(ticksInterval)
+			.tickSize(-6)
 			.tickFormat("")
 		)
-		.call(g => g.select(".domain").remove())
+		.call(g => g.select(".domain")
+			.attr("stroke", "#4a4a4a")
+			.attr("stroke-width", 0.25)
+			.attr("stroke-opacity", 0.5)
+		)
 		.call(g => g.selectAll(".tick line")
 			.attr("stroke", "#4a4a4a")
 			.attr("stroke-width", 0.25)
 			.attr("stroke-opacity", 0.5)
-			.attr("stroke-dasharray", "5,5")
 		);
 
 	svg.append("g")
