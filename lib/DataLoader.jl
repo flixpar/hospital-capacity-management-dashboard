@@ -191,21 +191,21 @@ function load_completedata(patienttype, scenario)
 
 	outdata = (
 		realdata = (
-			active = data.realdata[patienttype].active,
-			admitted = data.realdata[patienttype].admitted,
+			occupancy = data.realdata[patienttype].active,
+			admissions = data.realdata[patienttype].admitted,
 			meta = data.realdata[:meta],
 		),
 		shortterm = (
-			active = data.shortterm[(patienttype, scenario)].active,
-			admitted = data.shortterm[(patienttype, scenario)].admitted,
+			occupancy = data.shortterm[(patienttype, scenario)].active,
+			admissions = data.shortterm[(patienttype, scenario)].admitted,
 			meta = data.shortterm[:meta],
 		),
 		longterm = (
-			active = data.longterm[(patienttype, scenario)].active,
-			admitted = data.longterm[(patienttype, scenario)].admitted,
+			occupancy = data.longterm[(patienttype, scenario)].active,
+			admissions = data.longterm[(patienttype, scenario)].admitted,
 			meta = data.longterm[:meta],
 		),
-		capacity = data.capacity[patienttype],
+		capacity_levels = data.capacity[patienttype],
 		hospitals = data.capacity[:meta].hospitals,
 		meta = (;
 			capacity_names = data.capacity[:meta].capacity_names,

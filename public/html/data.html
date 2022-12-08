@@ -94,7 +94,7 @@
 			</div>
 			<div id="result-area" class="column is-12" v-else-if="status == 'loaded'">
 				<result-section title="Data Compare" section-id="datacompare">
-					<fig-options type="data-compare" :options="[{value: 'active', text: 'Occupancy'}, {value: 'admitted', text: 'Admissions'}]" :show-options="params.patienttype == 'combined'"></fig-options>
+					<fig-options type="data-compare" :options="[{value: 'occupancy', text: 'Occupancy'}, {value: 'admissions', text: 'Admissions'}]" :show-options="params.patienttype == 'combined'"></fig-options>
 				</result-section>
 				<result-section title="Capacity Timeline" section-id="capacitytimeline">
 					<fig-options type="capacity-timeline" :options="[{value: 'realdata', text: 'Historical Data'}, {value: 'shortterm', text: 'Short-Term Forecast'}, {value: 'longterm', text: 'Long-Term Forecast'}]"></fig-options>

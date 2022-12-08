@@ -140,7 +140,7 @@ function convertData(response, datasource="realdata") {
 		occupancy: d3.transpose(response[datasource].occupancy),
 		occupancy_notfr: d3.transpose(response[datasource].occupancy),
 		beds: response.capacity_levels[0],
-		capacity: d3.transpose(response.capacity_levels),
+		capacity_levels: d3.transpose(response.capacity_levels),
 		config: {
 			dates: response[datasource].meta.date_range,
 			node_names: response.hospitals,
