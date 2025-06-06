@@ -1,4 +1,4 @@
-name = "JHHSPatientRedistributionSite"
+name = "HospitalCapacityManagementDashboard"
 uuid = "ecab4d2b-1477-43b7-847b-afb8a9b89a54"
 author = ["Felix Parker flixpar@gmail.com"]
 version = "0.1.0"
