@@ -84,6 +84,9 @@ route("/api/recommendations", method=POST) do
 	transfer_budget = Dict(input["transferbudget"])
 	objective_weights = Dict(input["surgepreferences"])
 
+	transfer_budget = Dict{String,Any}(string(k) => v for (k,v) in transfer_budget)
+	objective_weights = Dict{String,Any}(string(k) => v for (k,v) in objective_weights)
+
 	capacity_util = parse(Float64, input["utilization"])
 
 	uncertainty_level = input["uncertaintylevel"]

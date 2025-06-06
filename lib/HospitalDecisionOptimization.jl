@@ -39,6 +39,7 @@ end
 
 struct SolverParams
 	integer::Bool
+	integrality_gap::Real
 	timelimit::Real
 	verbose::Bool
 end
@@ -64,6 +65,8 @@ function optimize_decisions(
 	# create model
 	model = Model(Gurobi.Optimizer)
 	if !solver_params.verbose set_silent(model) end
+	set_optimizer_attribute(model, "MIPGap", solver_params.integrality_gap)
+	set_optimizer_attribute(model, "TimeLimit", solver_params.timelimit)
 
 	# set model parameters
 	model[:N] = N
@@ -183,11 +186,12 @@ function ObjectiveParams(N, T; transfercosts=nothing, capacitycosts=nothing, tra
 	return ObjectiveParams(transfercosts, capacitycosts, transfer_smoothness, capacity_smoothness, occupancy_smoothness, admissions_smoothness)
 end
 
-function SolverParams(;integer=nothing, timelimit=nothing, verbose=nothing)
+function SolverParams(;integer=nothing, integrality_gap=nothing, timelimit=nothing, verbose=nothing)
 	integer = isnothing(integer) ? false : integer
+	integrality_gap = isnothing(integrality_gap) ? 0.05 : integrality_gap
 	timelimit = isnothing(timelimit) ? Inf : timelimit
 	verbose = isnothing(verbose) ? false : verbose
-	return SolverParams(integer, timelimit, verbose)
+	return SolverParams(integer, integrality_gap, timelimit, verbose)
 end
 
 end

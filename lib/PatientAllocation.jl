@@ -86,6 +86,7 @@ function patient_redistribution(
 
 	if constrain_integer
 		set_optimizer_attribute(model, "TimeLimit", timelimit)
+		set_optimizer_attribute(model, "MIPGap", 0.05)
 	end
 
 	###############
