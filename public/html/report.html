@@ -67,7 +67,12 @@
 
 			<div class="content">
 				<h3 class="title is-3">Overview</h3>
-				<p>Patient transfers can help to reduce the required surge capacity and to balance load more evenly in healthcare systems facing stress from COVID-19. We have developed a model to determine optimal transfers so that hospital systems can reduce the surge capacity that they must create or balance load as evenly as possible, while also incorporating operational constraints and costs (for more details see our <a href="https://arxiv.org/pdf/2011.03528.pdf">paper</a>). We have applied this model to the Johns Hopkins Health System using the admissions forcast developed by Eili Klein. This document is a summary report of our current findings, but an interactive tool to modify the parameters to the model and visualize the results can be found on our <a href="https://jhhs.covid-hospital-operations.com/recommendations">website</a>. <b>Note: this version of the report is preliminary.</b>
+				<p>
+					This report provides an overview of the current state of the hospital system and recommendations for capacity management to address the surge in demand. Recommendations for capacity adjustments, patient transfers, and admission targets have been mathematically optimized to minimize the surge capacity required while not performing too many transfers and obeying operational constraints. However, these recommendations are based on predictions of future patient arrivals, and do not capture all dynamics of the problem, so they should be used as a guide rather than a definitive plan.
+					<br>
+					For further control over the decision recommendation process, use the <a href="/recommendations">decision recommendation</a> page. For more visualizations of the historical data and forecasts, see the <a href="/data">data</a> page. Additional details about the model and dashboard can be found on the <a href="/method">method</a> page or in our <a href="https://arxiv.org/abs/2403.15634">paper</a>.
+					<br>
+					<b>Note:</b> The current version of this dashboard is based on a (realistic) hypothetical hospital system and scenario that we have created for demonstration purposes.
 				</p>
 			</div>
 
@@ -84,13 +89,14 @@
 
 			<div class="content">
 				<h3 class="title is-3">Summary</h3>
-				<p>Our model suggests that optimal COVID patient transfers can reduce surge capacity needs in the hospital system ICUs by <span class="fillvalue">SURGEREDUCTION-ICU</span> from <span class="fillvalue">SURGE-NOTRANSFERS-ICU</span> bed days to <span class="fillvalue">SURGE-TRANSFERS-ICU</span> bed days from <span class="fillvalue">TIMEPERIOD</span>. The figures below show the optimal surge timeline for each hospital in the system and the optimal transfer amounts.</p>
+				<p>Our model suggests that optimal COVID patient transfers can reduce surge capacity needs in the hospital system ICUs by at least <span class="fillvalue">SURGEREDUCTION-ICU</span> from <span class="fillvalue">SURGE-NOTRANSFERS-ICU</span> bed days to <span class="fillvalue">SURGE-TRANSFERS-ICU</span> bed days from <span class="fillvalue">TIMEPERIOD</span>. The figures below show the optimal surge timeline for each hospital in the system and the optimal transfer amounts.</p>
 				<div id="section-results-capacity"></div>
 				<div id="section-results-transfers"></div>
 			</div>
 
 			<div class="content">
 				<h3 class="title is-3">Admission Targets</h3>
+				<p>The following tables show the daily average admissions for the hospital system (right-most column) and the target admissions for each hospital to stay within the operational occupancy limit for each of the possible capacity levels.</p>
 				<div id="admission-sims-icu-table-container" style="margin-bottom: 25px;">
 					<b>ICU Admissions (Daily Average)</b>
 				</div>
