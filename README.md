@@ -2,9 +2,15 @@
 
 ## Overview
 
-This project is an online dashboard for capacity management of hospitals during a demand surge (such as a pandemic). It provides mathematical optimization for patient allocation and transfer decisions across hospital systems, along with data visualizations and a status report. The backend is written in Julia, and the frontend is written in JavaScript.
+This project is an online dashboard for capacity management of hospitals during a demand surge (such as a pandemic). It provides mathematical optimization for patient allocation and transfer decisions across hospital systems, along with data visualizations and a status report. The dashboard was originally developed for the Johns Hopkins Health System but has been generalized to support any set of hospitals.
 
-The dashboard was originally developed for a specific hospital system but has been generalized to support any set of hospitals.
+This dashboard is deployed at [hcm-dashboard.optimal-lab.com](https://hcm-dashboard.optimal-lab.com).
+
+## Abstract
+
+Data-driven optimization models have the potential to significantly improve hospital capacity management, particularly during demand surges, when effective allocation of capacity is most critical and challenging. However, integrating models into existing processes in a way that provides value requires recognizing that hospital administrators are ultimately responsible for making capacity management decisions, and carefully building trustworthy and accessible tools for them. We have developed an interactive, user-friendly, electronic dashboard for informing hospital capacity management decisions during surge periods. The dashboard integrates real-time hospital data, predictive analytics, and optimization models. It allows hospital administrators to interactively customize parameters, enabling them to explore a range of scenarios, and provides real-time updates on recommended optimal decisions. The dashboard was created through a participatory design process, involving hospital administrators in the development team to ensure practical utility, trustworthiness, transparency, explainability, and usability. We successfully deployed our dashboard within the Johns Hopkins Health System during the height of the COVID-19 pandemic, addressing the increased need for tools to inform hospital capacity management. It was used on a daily basis, with results regularly communicated to hospital leadership. This work demonstrates the practical application of a prospective, data-driven, interactive decision-support tool for hospital system capacity management.
+
+Read more about the dashboard in our [preprint](https://arxiv.org/abs/2403.15634).
 
 ## Features
 
@@ -24,8 +30,8 @@ The dashboard was originally developed for a specific hospital system but has be
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/flixpar/patient-redistribution-site-public
-    cd patient-redistribution-site-public
+    git clone https://github.com/flixpar/hospital-capacity-management-dashboard.git
+    cd hospital-capacity-management-dashboard
     ```
 2.  Install Julia dependencies:
     ```bash
