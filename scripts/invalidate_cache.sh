@@ -1,3 +1,3 @@
 #!/bin/sh
-sudo rm -rf /home/flixpar/cache/*
+sudo rm -rf /var/cache/nginx/hcm-dashboard/*
 sudo nginx -s reload
