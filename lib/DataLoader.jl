@@ -6,14 +6,14 @@ using Distributions
 using Dates
 using LinearAlgebra: diagm
 
-export load_jhhs, load_jhhs_full
+export load_hospital_system, load_hospital_system_full
 export load_completedata
 export los_dist_default
 
 ENABLE_BCC = false
 
 
-function load_jhhs(
+function load_hospital_system(
 		scenario::Symbol,
 		patient_type::Symbol,
 		start_date::Date,
@@ -82,16 +82,20 @@ function load_jhhs(
 
 	hospitals = rawdata.capacity[:meta].hospitals
 
-	hospital_locations = Dict(
-		"JHH"  => (lat = 39.2961773, long = -76.5939447),
-		"SMH"  => (lat = 38.9364687, long = -77.1091435),
-		"HCGH" => (lat = 39.2136187, long = -76.885917),
-		"BMC"  => (lat = 39.290101,  long = -76.5468383),
-		"SH"   => (lat = 38.9973285, long = -77.1105309),
-	)
+	# Get hospital metadata from data file
+	system_metadata = rawdata.system_metadata
+	hospital_locations = Dict()
+	for hospital_id in hospitals
+		hospital_info = system_metadata.hospitals[hospital_id]
+		hospital_locations[hospital_id] = (lat = hospital_info.lat, long = hospital_info.long)
+	end
 
-	region = (region_type="hospital_system", region_name="JHHS", region_fullname="Johns Hopkins Health System")
-	extent = (extent_type = :points, extent_regions = [])
+	region = (
+		region_type = system_metadata.region_type,
+		region_name = system_metadata.region_name,
+		region_fullname = system_metadata.region_fullname
+	)
+	extent = system_metadata.extent
 
 	outdata = (;
 		active,
@@ -118,7 +122,7 @@ function load_jhhs(
 	return outdata
 end
 
-function load_jhhs_full(
+function load_hospital_system_full(
 		scenario::String,
 		patient_type::String,
 		bed_type::String,
@@ -159,14 +163,20 @@ function load_jhhs_full(
 	los_dists = [los_dist_default(bed_type) for _ in 1:size(occupancy,1)]
 
 	hospitals = rawdata.capacity[:meta].hospitals
-	hospital_locations = Dict(
-		"JHH"  => (lat = 39.2961773, long = -76.5939447),
-		"SMH"  => (lat = 38.9364687, long = -77.1091435),
-		"HCGH" => (lat = 39.2136187, long = -76.885917),
-		"BMC"  => (lat = 39.290101,  long = -76.5468383),
-		"SH"   => (lat = 38.9973285, long = -77.1105309),
+	
+	# Get hospital metadata from data file
+	system_metadata = rawdata.system_metadata
+	hospital_locations = Dict()
+	for hospital_id in hospitals
+		hospital_info = system_metadata.hospitals[hospital_id]
+		hospital_locations[hospital_id] = (lat = hospital_info.lat, long = hospital_info.long)
+	end
+	
+	region = (
+		region_type = system_metadata.region_type,
+		region_name = system_metadata.region_name,
+		region_fullname = system_metadata.region_fullname
 	)
-	region = (region_type="hospital_system", region_name="JHHS", region_fullname="Johns Hopkins Health System")
 
 	outdata = (;
 		occupancy,
