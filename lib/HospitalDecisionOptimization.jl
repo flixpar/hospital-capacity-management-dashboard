@@ -56,11 +56,20 @@ function optimize_decisions(
 		solver_params::SolverParams;
 		adj_matrix=nothing,
 	)
+	@info "Start optimizing decisions"
 
 	N, T = size(arrivals)
 	C = size(capacity_perlevel, 2)
 
 	L = discretize_los(los, T)
+
+	# calculate survival (non-discharge) probabilities P(LOS > d), where d is number of days
+	# los_survival[i, d+1] = P(LOS > d)
+	los_survival = similar(L)
+	for i in 1:N, t in 1:(T-1)
+		los_survival[i, t+1] = 1.0 - cdf(los[i], t)
+	end
+	los_survival[isnan.(los_survival)] .= 0.0
 
 	# create model
 	model = Model(Gurobi.Optimizer)
@@ -79,10 +88,11 @@ function optimize_decisions(
 
 	@expression(model, transfers_[i=1:N, j=1:N, t=1:T], (t ∈ Topt) ? transfers[i,j,t] : 0)
 
-	# occupancy
+	# admissions
 	@expression(model, admissions[i=1:N, t=1:T], arrivals[i,t] + sum(transfers_[:,i,t]) - sum(transfers_[i,:,t]))
-	@expression(model, discharges[i=1:N, t=1:T], dot(admissions[i,1:t], L[i,t:-1:1]))
-	@expression(model, occupancy[i=1:N, t=1:T], sum(admissions[i,1:t]) - sum(discharges[i,1:t]))
+
+	# efficient occupancy calculation using convolution
+	@expression(model, occupancy[i=1:N, t=1:T], sum(admissions[i, k] * los_survival[i, t-k+1] for k in 1:t))
 
 	# capacity
 	@expression(model, capacity[i=1:N, t=Topt], sum(capacity_level[i,t,c] * capacity_perlevel[i,c] for c in 1:C))
@@ -136,13 +146,17 @@ function add_transfer_budget!(model, transferbudget)
 
 	notinf(x) = !isinf(x)
 	if any(notinf.(transferbudget.perhospitalpair))
-		@constraint(model, [i=1:N, j=1:N, t in Topt], transfers[i,j,t] ≤ transferbudget.perhospitalpair[i,j])
+		for i in 1:N, j in 1:N
+			if notinf(transferbudget.perhospitalpair[i,j])
+				set_upper_bound.(transfers[i,j,:], max(transferbudget.perhospitalpair[i,j], 0.01))
+			end
+		end
 	end
 	if any(notinf.(transferbudget.perhospital))
-		@constraint(model, [i=1:N, t in Topt], sum(transfers[i,:,t]) ≤ transferbudget.perhospital[i])
+		@constraint(model, [i=1:N], sum(transfers[i,:,:]) ≤ transferbudget.perhospital[i])
 	end
 	if notinf(transferbudget.total)
-		@constraint(model, [i=1:N, j=1:N, t in Topt], sum(transfers) ≤ transferbudget.total)
+		@constraint(model, sum(transfers) ≤ transferbudget.total)
 	end
 
 	return model
@@ -188,7 +202,7 @@ end
 
 function SolverParams(;integer=nothing, integrality_gap=nothing, timelimit=nothing, verbose=nothing)
 	integer = isnothing(integer) ? false : integer
-	integrality_gap = isnothing(integrality_gap) ? 0.05 : integrality_gap
+	integrality_gap = isnothing(integrality_gap) ? 0.1 : integrality_gap
 	timelimit = isnothing(timelimit) ? Inf : timelimit
 	verbose = isnothing(verbose) ? false : verbose
 	return SolverParams(integer, integrality_gap, timelimit, verbose)
