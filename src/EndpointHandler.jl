@@ -202,7 +202,7 @@ function handle_decision_optimization(
 
 		decision_targets::Array{String,1},
 		capacity_type::String,
-		constrain_integer::Bool,
+		complexity::String,
 
 		transferbudget_dict::Dict{String,Any},
 		objective_weights_dict::Dict{String,Any},
@@ -262,7 +262,18 @@ function handle_decision_optimization(
 
 	model_params = ModelParams(decision_targets, capacity_type)
 	obj_params = ObjectiveParams(N, T, transfercosts=2, capacitycosts=capacitycosts)
-	solver_params = SolverParams(integer=constrain_integer)
+
+	if complexity == "approx-fast"
+		solver_params = SolverParams(integer=false, integrality_gap=0.25, timelimit=10.0)
+	elseif complexity == "approx-medium"
+		solver_params = SolverParams(integer=false, integrality_gap=0.125, timelimit=30.0)
+	elseif complexity == "complete-medium"
+		solver_params = SolverParams(integer=true, integrality_gap=0.125, timelimit=60.0)
+	elseif complexity == "complete-slow"
+		solver_params = SolverParams(integer=true, integrality_gap=0.02, timelimit=120.0)
+	else
+		error("Invalid complexity: $(complexity)")
+	end
 
 	model = optimize_decisions(
 		data.arrivals,

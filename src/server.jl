@@ -79,7 +79,7 @@ route("/api/recommendations", method=POST) do
 
 	decision_targets = (input["objective"] == "capacity+transfers") ? ["transfers", "capacity"] : [input["objective"]]
 	capacity_type = input["capacity_type"]
-	constrain_integer = (input["integer"] == "true")
+	complexity = input["complexity"]
 
 	transfer_budget = Dict(input["transferbudget"])
 	objective_weights = Dict(input["surgepreferences"])
@@ -99,7 +99,7 @@ route("/api/recommendations", method=POST) do
 
 		decision_targets,
 		capacity_type,
-		constrain_integer,
+		complexity,
 
 		transfer_budget, objective_weights,
 		capacity_util,
