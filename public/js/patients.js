@@ -2,7 +2,7 @@ console.log("Starting!");
 
 import * as common from "./common.js";
 import {createMap} from "./map_plots.js";
-import {createJHHSDashboard} from "./dashboard.js";
+import {createHospitalDashboard} from "./dashboard.js";
 import {createTransfersBreakdownPlot} from "./transfers.js";
 import {createAdmissionsPlot} from "./admitted.js";
 import {createDischargedPlot} from "./discharged.js";
@@ -19,7 +19,7 @@ let container = document.getElementById("result-area");
 let recentResponse = null;
 
 
-function handleResponse(response, status, xhr) {
+async function handleResponse(response, status, xhr) {
 	console.log("Updating...");
 	hideProgressbar();
 	container.innerHTML = "";
@@ -27,6 +27,9 @@ function handleResponse(response, status, xhr) {
 	response.capacity_levels = response.capacity;
 
 	recentResponse = response;
+	
+	// Load hospital colors before creating visualizations
+	await common.initializeAllColors();
 
 	makeSections();
 
@@ -39,7 +42,7 @@ function handleResponse(response, status, xhr) {
 
 	createMap(response, "overflow_dynamic", "transfers");
 
-	createJHHSDashboard(response);
+	createHospitalDashboard(response);
 	createCapacityTimeline(response);
 
 	createTransfersSankey(response);
@@ -293,7 +296,7 @@ function updateText(response) {
 
 	const isMobile = (window.innerWidth < 600);
 
-	let mapTitle = `COVID-19 Capacity, Occupancy, and Optimal Transfers in JHHS`;
+	let mapTitle = `COVID-19 Capacity, Occupancy, and Optimal Transfers in ${response.config.region.region_fullname}`;
 	if (isMobile) {mapTitle = `COVID-19 Occupancy, and Optimal Transfers`;}
 	for (let map of document.querySelectorAll(".hospitalsmap")) {
 		const metric = map.id.substring(13);
@@ -305,7 +308,7 @@ function updateText(response) {
 	}
 
 	for (let elem of document.querySelectorAll(".region-text")) {
-		elem.textContent = "JHHS";
+		elem.textContent = response.config.region.region_name;
 	}
 
 	for (let elem of document.querySelectorAll(".fill-value")) {

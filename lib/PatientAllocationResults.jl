@@ -233,7 +233,7 @@ function admission_targets(patient_type, start_date=Date(2021, 1, 1), end_date=n
 		end_date = start_date + Day(6)
 	end
 
-	data = DataLoader.load_jhhs(:none, patient_type, start_date, end_date)
+	data = DataLoader.load_hospital_system(:none, patient_type, start_date, end_date)
 	capacity = data.capacity
 
 	los_dist = DataLoader.los_dist_default(patient_type)

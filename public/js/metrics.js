@@ -235,7 +235,7 @@ function createAdmissionTargetsTableRaw(response, sectionName, includeCurrent=tr
 
 	if (includeCurrent) {
 		let elem = document.createElement("th");
-		elem.textContent = "Average";
+		elem.textContent = "Current Average";
 		tableHeaderRow.appendChild(elem);
 	}
 

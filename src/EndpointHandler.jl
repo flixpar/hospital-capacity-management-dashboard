@@ -7,6 +7,7 @@ using JuMP
 using DataFrames
 using LinearAlgebra
 using Distributions
+using Serialization
 
 using DataLoader
 using PatientAllocation
@@ -17,6 +18,7 @@ export handle_patients_request
 export handle_decision_optimization
 export generate_report
 export get_all_data
+export get_hospital_metadata
 
 
 function handle_patients_request(
@@ -38,7 +40,7 @@ function handle_patients_request(
 
 	@assert patient_type in [:acute, :icu, :total]
 
-	data = load_jhhs(scenario, patient_type, start_date, end_date)
+	data = load_hospital_system(scenario, patient_type, start_date, end_date)
 	default_capacity_level = 1
 
 	if los_param == "default_dist"
@@ -211,7 +213,7 @@ function handle_decision_optimization(
 
 	forecast_scenario = "none"
 
-	data = load_jhhs_full(forecast_scenario, patient_type, bed_type)
+	data = load_hospital_system_full(forecast_scenario, patient_type, bed_type)
 
 	s = findfirst(==(start_date), data.dates)
 	t = findfirst(==(end_date), data.dates)
@@ -227,13 +229,35 @@ function handle_decision_optimization(
 		)
 	)
 
-	capacitycosts = [parse(Float64, objective_weights_dict[lowercase(h)])*2 + 0.05 for h in data.node_names]
+	# Handle missing hospital names in objective_weights_dict with fallback to default value
+	capacitycosts = []
+	for h in data.node_names
+		key = lowercase(h)
+		if haskey(objective_weights_dict, key)
+			push!(capacitycosts, parse(Float64, objective_weights_dict[key]) * 2 + 0.05)
+		else
+			# Default fallback value (equivalent to 0.5 surge preference)
+			push!(capacitycosts, 0.5 * 2 + 0.05)
+		end
+	end
+
+	# Handle missing hospital names in transferbudget_dict with fallback to default value
+	perhospitalday = []
+	for k in data.node_names
+		key = lowercase(k)
+		if haskey(transferbudget_dict, key)
+			push!(perhospitalday, parse(Int, transferbudget_dict[key]))
+		else
+			# Default fallback value
+			push!(perhospitalday, 10)
+		end
+	end
 
 	transferbudget = TransferBudgets(
 		N, T,
 		total = parse(Int, transferbudget_dict["total"]),
 		perday = tryparse(Int, get(transferbudget_dict, "byday", "")),
-		perhospitalday = [parse(Int, transferbudget_dict[lowercase(k)]) for k in data.node_names],
+		perhospitalday = perhospitalday,
 	)
 
 	model_params = ModelParams(decision_targets, capacity_type)
@@ -294,7 +318,10 @@ function generate_report()
 	scenario = :moderate
 	objective = :minoverflow
 	constrain_integer = false
-	surge_preferences_dict = Dict{String,Any}("bmc" => "0", "hcgh" => "0", "jhh" => "0", "sh" => "0", "smh" => "0")
+	# Get hospital names from data for surge preferences
+	data_sample = load_hospital_system(:none, :icu, Date(2021, 12, 15), Date(2021, 12, 16))
+	hospital_names = [lowercase(h) for h in data_sample.node_names]
+	surge_preferences_dict = Dict{String,Any}(h => "0" for h in hospital_names)
 	capacity_util = 0.95
 	uncertainty_level = :default
 	los_param = "default_dist"
@@ -306,8 +333,9 @@ function generate_report()
 	responses = Dict()
 	for patient_type in [:icu, :acute]
 		tfr_budget = (patient_type == :icu) ? "15" : "25"
-		transfer_budget_dict = Dict{String,Any}(h => tfr_budget for h in ["bmc", "hcgh", "jhh", "sh", "smh", "total"])
-		r = handle_patients_request(
+		transfer_budget_dict = Dict{String,Any}(h => tfr_budget for h in hospital_names)
+		transfer_budget_dict["total"] = tfr_budget
+		r = handle_patients_request( # TODO: use decision optimization instead
 			scenario,
 			patient_type,
 			objective,
@@ -343,6 +371,11 @@ end
 
 function get_all_data(patienttype, scenario)
 	return load_completedata(patienttype, scenario)
+end
+
+function get_hospital_metadata()
+	rawdata = deserialize("data/data.jlser")
+	return rawdata.system_metadata
 end
 
 end;

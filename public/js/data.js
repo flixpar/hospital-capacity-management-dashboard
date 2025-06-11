@@ -1,7 +1,8 @@
-import {makeJHHSDashboard} from "./dashboard.js";
+import {makeHospitalDashboard} from "./dashboard.js";
 import {makeCapacityTimeline} from "./capacity_timeline.js";
 import {makeDataCompareFigure} from "./data_compare.js";
 import {generateFigureDownloadButtons} from "./figuredl.js";
+import * as common from "./common.js";
 
 
 const RootComponent = {
@@ -57,7 +58,7 @@ app.component("fig", {
 		} else if (this.type == "capacity-timeline") {
 			fig = createCapacityTimeline(this.$root.response);
 		} else if (this.type == "dashboard") {
-			fig = createJHHSDashboard(this.$root.response);
+			fig = createHospitalDashboard(this.$root.response);
 		}
 		this.$el.appendChild(fig);
 		generateFigureDownloadButtons(fig, this.type);
@@ -104,7 +105,7 @@ app.component("fig-options", {
 				}
 				fig = createCapacityTimeline(this.$root.response, this.arg);
 			} else if (this.type == "dashboard") {
-				fig = createJHHSDashboard(this.$root.response, this.arg);
+				fig = createHospitalDashboard(this.$root.response, this.arg);
 			}
 			this.$refs.figContainer.appendChild(fig);
 			generateFigureDownloadButtons(fig, this.type);
@@ -151,9 +152,9 @@ function convertData(response, datasource="realdata") {
 	return data;
 }
 
-function createJHHSDashboard(response, datasource="realdata") {
+function createHospitalDashboard(response, datasource="realdata") {
 	const data = convertData(response, datasource);
-	const fig = makeJHHSDashboard(data);
+	const fig = makeHospitalDashboard(data);
 	return fig;
 }
 
@@ -168,15 +169,18 @@ function createDataCompare(response, datatype) {
 	return fig;
 }
 
-function updateData() {
+async function updateData() {
 	const scenario = vm.params.scenario;
 	const patienttype = vm.params.patienttype;
 	vm.status = "loading";
+	
+	// Load hospital colors if not already loaded
+	await common.initializeAllColors();
+	
 	fetch(`/api/data?scenario=${scenario}&patienttype=${patienttype}`)
 		.then(response => response.json())
 		.then(response => {
-			const nodeNameMap = {"BMC": "H1", "HCGH": "H2", "JHH": "H3", "SH": "H4", "SMH": "H5"};
-			response.hospitals = response.hospitals.map((n) => nodeNameMap[n]);
+			// No need for hardcoded name mapping anymore
 			return response;
 		})
 		.then(data => {

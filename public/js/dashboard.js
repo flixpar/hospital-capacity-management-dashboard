@@ -15,28 +15,28 @@ const dashboardCapacityLineWidth = 1;
 const dashboardAxisColor = "#4a4a4a";
 
 const dashboardCapacityColors = ["gold", "darkorange", "red", "purple", "black"];
-const dashboardLineColors = {
-	"BMC":  "#006C67",
-	"HCGH": "#B9314F",
-	"JHH":  "#454E9E",
-	"SH":   "#95B46A",
-	"SMH":  "#B6C2D9",
-	"BCC":  "#9370DB",
-	"H1": "#006C67",
-	"H2": "#B9314F",
-	"H3": "#454E9E",
-	"H4": "#95B46A",
-	"H5": "#B6C2D9",
-	"default": "blue",
-};
+// Dynamic hospital colors - will be loaded from metadata
+let dashboardLineColors = null;
 
-import {makeLegend} from "./common.js";
+import {makeLegend, getHospitalColors} from "./common.js";
 import {dashboardDescription} from "./figure_text.js";
 
-export {createJHHSDashboard, makeJHHSDashboard};
+export {createHospitalDashboard, makeHospitalDashboard, loadHospitalColors};
 
+// Function to preload hospital colors
+async function loadHospitalColors() {
+	if (dashboardLineColors === null) {
+		dashboardLineColors = await getHospitalColors();
+	}
+}
 
-function createJHHSDashboard(response, add_description=true) {
+function createHospitalDashboard(response, add_description=true) {
+	// Colors should already be loaded by this point
+	if (dashboardLineColors === null) {
+		console.warn("Hospital colors not loaded, using default colors");
+		dashboardLineColors = {};
+	}
+	
 	const section = document.getElementById("section-results-dashboard");
 	if (add_description) {
 		let description = document.createElement("p");
@@ -44,7 +44,7 @@ function createJHHSDashboard(response, add_description=true) {
 		section.appendChild(description);
 	}
 
-	const fig = makeJHHSDashboard(response);
+	const fig = makeHospitalDashboard(response);
 	section.appendChild(fig);
 
 	fig.setAttribute("figure-name", "capacity-dashboard");
@@ -54,7 +54,7 @@ function createJHHSDashboard(response, add_description=true) {
 	section.appendChild(hr);
 }
 
-function makeJHHSDashboard(response) {
+function makeHospitalDashboard(response) {
 	const svg = d3.create("svg").attr("viewBox", [0, 0, dashboardSize.width, dashboardSize.height]);
 
 	const N = response.beds.length;
@@ -175,7 +175,9 @@ function plotOccupancy(svg, xScale, yScale, data, response, locIdx, plotSize, pl
 		}
 
 	const locName = response.config.node_names[locIdx];
-	const locColor = (locName in dashboardLineColors) ? dashboardLineColors[locName] : dashboardLineColors["default"];
+	// Use local colors if available, otherwise use global colors
+	const colors = dashboardLineColors || window.hospitalColors || {};
+	const locColor = (locName in colors) ? colors[locName] : "#000000";
 
 	svg.append("path")
 		.datum(data["occupancy"][locIdx])

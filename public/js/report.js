@@ -7,7 +7,7 @@ function handleResponse(response) {
 	response.icu.capacity_levels = response.icu.capacity;
 	response.acute.capacity_levels = response.acute.capacity;
 
-	response = censorResponse(response);
+	// response = censorResponse(response);
 	console.log(response);
 
 	document.querySelectorAll(".fillvalue").forEach(e => {
@@ -65,12 +65,21 @@ function computeValue(response, metricName) {
 }
 
 function censorResponse(response) {
-	const nodeNameMap = {"BMC": "H1", "HCGH": "H2", "JHH": "H3", "SH": "H4", "SMH": "H5"};
+	// Create dynamic hospital name mapping based on the data
+	const originalHospitals = response.icu ? response.icu.config.node_names : response.acute.config.node_names;
+	const nodeNameMap = {};
+	originalHospitals.forEach((hospital, index) => {
+		nodeNameMap[hospital] = `H${index + 1}`;
+	});
+	
 	for (const btype of ["icu", "acute"]) {
+		if (!response[btype]) continue;
 		response[btype].config.node_names = response[btype].config.node_names.map(h => nodeNameMap[h]);
 		for (const [h_in, h_out] of Object.entries(nodeNameMap)) {
-			response[btype].admission_targets.table[h_out] = response[btype].admission_targets.table[h_in];
-			delete response[btype].admission_targets.table[h_in];
+			if (response[btype].admission_targets && response[btype].admission_targets.table) {
+				response[btype].admission_targets.table[h_out] = response[btype].admission_targets.table[h_in];
+				delete response[btype].admission_targets.table[h_in];
+			}
 		}
 	}
 	return response;

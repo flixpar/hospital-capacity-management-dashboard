@@ -120,6 +120,11 @@ route("/api/data", method=GET) do
 	return json(response)
 end
 
+route("/api/metadata", method=GET) do
+	response = get_hospital_metadata()
+	return json(response)
+end
+
 if abspath(PROGRAM_FILE) == @__FILE__
 	port = (haskey(ENV, "PORT") ? parse(Int, ENV["PORT"]) : 8000)
 	up(port, async = false)

@@ -6,6 +6,10 @@ export {
 	getDateIntervals,
 	makeHorizontalColorScale,
 	makeLegend,
+	getHospitalMetadata,
+	getHospitalColors,
+	getHospitalNames,
+	initializeAllColors,
 };
 
 const toTitlecase = s => s.split(' ').map(w => w[0].toUpperCase() + w.substr(1)).join(' ');
@@ -228,4 +232,57 @@ function makeLegend(svg, labels, colors, singleRow=true, position="bottom", debu
 	svg.attr("viewBox", viewBox);
 
 	return svg;
+}
+
+// Global variable to cache hospital metadata
+let hospitalMetadataCache = null;
+
+// Function to fetch and cache hospital metadata
+async function getHospitalMetadata() {
+	if (hospitalMetadataCache === null) {
+		try {
+			const response = await fetch('/api/metadata');
+			hospitalMetadataCache = await response.json();
+		} catch (error) {
+			console.error('Error fetching hospital metadata:', error);
+			// Fallback to default values
+			hospitalMetadataCache = {
+				region_name: "HS",
+				region_fullname: "Hospital System",
+				hospitals: {}
+			};
+		}
+	}
+	return hospitalMetadataCache;
+}
+
+// Function to get hospital colors mapping
+async function getHospitalColors() {
+	const metadata = await getHospitalMetadata();
+	const colors = {};
+	for (const [hospitalId, hospitalInfo] of Object.entries(metadata.hospitals)) {
+		colors[hospitalId] = hospitalInfo.color;
+	}
+	return colors;
+}
+
+// Function to get hospital names array
+async function getHospitalNames() {
+	const metadata = await getHospitalMetadata();
+	return Object.keys(metadata.hospitals);
+}
+
+// Function to initialize all color variables across modules
+async function initializeAllColors() {
+	const colors = await getHospitalColors();
+	
+	// Update dashboard colors
+	if (typeof dashboardLineColors !== 'undefined' && dashboardLineColors === null) {
+		dashboardLineColors = colors;
+	}
+	
+	// Update other chart colors by setting them on the window object
+	window.hospitalColors = colors;
+	
+	return colors;
 }

@@ -1,19 +1,7 @@
 const tfrFigureSize = {width: 600, height: 400};
 const tfrFigureMargin = {left: 35, right: 2, top: 2, bottom: 2};
-const tfrBarColors = {
-	"BMC":  "#006C67",
-	"HCGH": "#B9314F",
-	"JHH":  "#454E9E",
-	"SH":   "#95B46A",
-	"SMH":  "#B6C2D9",
-	"BCC":  "#9370DB",
-	"H1": "#006C67",
-	"H2": "#B9314F",
-	"H3": "#454E9E",
-	"H4": "#95B46A",
-	"H5": "#B6C2D9",
-	"default": "blue",
-};
+// Dynamic hospital colors - will be loaded from metadata
+let tfrBarColors = null;
 const tfrFigureFont = "Helvetica, Arial, sans-serif";
 
 import {makeLegend} from "./common.js";
@@ -68,7 +56,9 @@ function makeTransfersBreakdownPlot(response) {
 		.text("Origin Hospital");
 
 	const hospNames = response.config.node_names;
-	const hospColors = response.config.node_names.map(h => tfrBarColors[h]);
+	// Use local colors if available, otherwise use global colors
+	const colors = tfrBarColors || window.hospitalColors || {};
+	const hospColors = response.config.node_names.map(h => (h in colors) ? colors[h] : "#000000");
 	makeLegend(svg, hospNames, hospColors);
 
 	return svg.node();
@@ -173,7 +163,7 @@ function makeTransfersBreakdownSubplot(svg, response, locIdx, plotSize) {
 		return data.map((d,t) => {
 			return {
 				date: d.date,
-				color: tfrBarColors[response.config.node_names[j]],
+				color: (response.config.node_names[j] in (tfrBarColors || window.hospitalColors || {})) ? (tfrBarColors || window.hospitalColors)[response.config.node_names[j]] : "#000000",
 				0: (j == 0) ? 0 : d.values[j-1],
 				1: d.values[j],
 				value: response.transfers[locIdx][j][t],

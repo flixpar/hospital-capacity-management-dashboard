@@ -2,7 +2,7 @@ console.log("Starting!");
 
 import * as common from "./common.js";
 import {createMap} from "./map_plots.js";
-import {createJHHSDashboard} from "./dashboard.js";
+import {createHospitalDashboard} from "./dashboard.js";
 import {createTransfersBreakdownPlot} from "./transfers.js";
 import {createAdmissionsPlot} from "./admitted.js";
 import {createDischargedPlot} from "./discharged.js";
@@ -20,16 +20,19 @@ let container = document.getElementById("result-area");
 export let recentResponse = null;
 
 
-function handleResponse(response, status, xhr) {
+async function handleResponse(response, status, xhr) {
 	console.log("Updating...");
 	hideProgressbar();
 	container.innerHTML = "";
 
 	response.beds = response.capacity_levels.map(x => x[0]);
-	response = censorResponse(response);
+	// response = censorResponse(response);
 
 	recentResponse = response;
 	console.log(response);
+	
+	// Load hospital colors before creating visualizations
+	await common.initializeAllColors();
 
 	makeSections();
 
@@ -42,7 +45,7 @@ function handleResponse(response, status, xhr) {
 
 	createMap(response, "overflow_dynamic", "transfers");
 
-	createJHHSDashboard(response);
+	createHospitalDashboard(response);
 	createCapacityTimeline(response);
 
 	createTransfersSankey(response);
@@ -166,8 +169,7 @@ function setDefaultDates() {
 }
 setDefaultDates();
 
-function setDefaultTransferBudget() {
-	const hospital_extensions = ["bmc", "hcgh", "jhh", "sh", "smh", "total"];
+async function setDefaultTransferBudget() {
 	const bedtype = document.getElementById("form-bed-type").value;
 
 	let defaultvalue = 10;
@@ -179,12 +181,21 @@ function setDefaultTransferBudget() {
 		defaultvalue = 25;
 	}
 
-	hospital_extensions.forEach(h => {
-		document.getElementById(`form-transferbudget-${h}`).value = defaultvalue;
-	});
+	// Get dynamic hospital names and update their form values
+	try {
+		const hospitalNames = await common.getHospitalNames();
+		hospitalNames.forEach(h => {
+			const element = document.getElementById(`form-transferbudget-${h.toLowerCase()}`);
+			if (element) {
+				element.value = defaultvalue;
+			}
+		});
+	} catch (error) {
+		console.error("Error setting default transfer budget:", error);
+	}
+	
 	document.getElementById("form-transferbudget-total").value = 250;
 }
-setDefaultTransferBudget();
 document.getElementById("form-bed-type").addEventListener("change", setDefaultTransferBudget);
 
 function constrainPatientType() {
@@ -222,25 +233,44 @@ function validateForm() {
 	return dates_valid && patient_type_valid;
 }
 
-function sendUpdateQuery() {
+async function sendUpdateQuery() {
 	if (!validateForm()) {
 		return;
 	}
-	const surgepreferences = {
-		bmc: document.getElementById("form-surgepreferences-bmc").value,
-		hcgh: document.getElementById("form-surgepreferences-hcgh").value,
-		jhh: document.getElementById("form-surgepreferences-jhh").value,
-		sh: document.getElementById("form-surgepreferences-sh").value,
-		smh: document.getElementById("form-surgepreferences-smh").value,
-	};
+
+	// Get dynamic hospital names
+	let hospitalNames;
+	try {
+		hospitalNames = await common.getHospitalNames();
+	} catch (error) {
+		console.error("Error getting hospital names:", error);
+		alert("Error loading hospital data. Please refresh the page.");
+		return;
+	}
+
+	// Build surgepreferences dynamically
+	const surgepreferences = {};
+	hospitalNames.forEach(h => {
+		const element = document.getElementById(`form-surgepreferences-${h.toLowerCase()}`);
+		if (element) {
+			surgepreferences[h.toLowerCase()] = element.value;
+		} else {
+			surgepreferences[h.toLowerCase()] = "0.5"; // Default value
+		}
+	});
+
+	// Build transferBudget dynamically
 	const transferBudget = {
-		bmc: document.getElementById("form-transferbudget-bmc").value,
-		hcgh: document.getElementById("form-transferbudget-hcgh").value,
-		jhh: document.getElementById("form-transferbudget-jhh").value,
-		sh: document.getElementById("form-transferbudget-sh").value,
-		smh: document.getElementById("form-transferbudget-smh").value,
 		total: document.getElementById("form-transferbudget-total").value,
 	};
+	hospitalNames.forEach(h => {
+		const element = document.getElementById(`form-transferbudget-${h.toLowerCase()}`);
+		if (element) {
+			transferBudget[h.toLowerCase()] = element.value;
+		} else {
+			transferBudget[h.toLowerCase()] = "10"; // Default value
+		}
+	});
 	const data = {
 		start_date: $("#form-start-date")[0].value,
 		end_date: $("#form-end-date")[0].value,
@@ -250,7 +280,7 @@ function sendUpdateQuery() {
 
 		objective: $("#form-objective")[0].value,
 		capacity_type: $("#form-capacity-type")[0].value,
-		integer: $("#form-integer")[0].value,
+		complexity: $("#form-complexity")[0].value,
 
 		transferbudget: transferBudget,
 		surgepreferences: surgepreferences,
@@ -342,18 +372,73 @@ function updateText(response) {
 	}
 }
 
-function censorForm() {
-	let hospitals = ["bmc", "hcgh", "jhh", "sh", "smh"];
-	for (let i = 0; i < hospitals.length; i++) {
-		let h = hospitals[i];
-		document.querySelector(`label[for="form-transferbudget-${h}"]`).innerHTML = `H${i+1}`;
-		document.querySelector(`label[for="form-surgepreferences-${h}"]`).innerHTML = `H${i+1}`;
-	}
+async function createDynamicFormElements() {
+	// Get dynamic hospital names
+	const hospitalNames = await common.getHospitalNames();
+	
+	// Create transfer budget inputs
+	const transferContainer = document.getElementById("form-transferbudget-container");
+	transferContainer.innerHTML = ""; // Clear existing content
+	
+	hospitalNames.forEach((h, i) => {
+		const inputContainer = document.createElement("div");
+		inputContainer.className = "input-range-container";
+		
+		const label = document.createElement("label");
+		label.setAttribute("for", `form-transferbudget-${h.toLowerCase()}`);
+		label.textContent = `H${i+1}`;
+		
+		const input = document.createElement("input");
+		input.id = `form-transferbudget-${h.toLowerCase()}`;
+		input.className = "input";
+		input.type = "number";
+		input.min = "0";
+		input.value = "10";
+		input.step = "1";
+		
+		inputContainer.appendChild(label);
+		inputContainer.appendChild(input);
+		transferContainer.appendChild(inputContainer);
+	});
+	
+	// Create surge preferences inputs
+	const surgeContainer = document.getElementById("form-surgepreferences-container");
+	surgeContainer.innerHTML = ""; // Clear existing content
+	
+	hospitalNames.forEach((h, i) => {
+		const inputContainer = document.createElement("div");
+		inputContainer.className = "input-range-container";
+		
+		const label = document.createElement("label");
+		label.setAttribute("for", `form-surgepreferences-${h.toLowerCase()}`);
+		label.textContent = `H${i+1}`;
+		
+		const input = document.createElement("input");
+		input.id = `form-surgepreferences-${h.toLowerCase()}`;
+		input.type = "range";
+		input.min = "0";
+		input.max = "1";
+		input.value = "0.5";
+		input.step = "0.125";
+		input.setAttribute("orient", "vertical");
+		
+		inputContainer.appendChild(label);
+		inputContainer.appendChild(input);
+		surgeContainer.appendChild(inputContainer);
+	});
 }
-censorForm();
+
+// Initialize dynamic form elements when page loads
+createDynamicFormElements().then(() => {
+	// Set default transfer budget values after form elements are created
+	setDefaultTransferBudget();
+}).catch(error => {
+	console.error("Error creating dynamic form elements:", error);
+});
 
 function censorResponse(response) {
-	let hospitals = ["BMC", "HCGH", "JHH", "SH", "SMH"];
+	// Get original hospital names from the response
+	let hospitals = [...response.config.node_names];
 	let hospitalConverter = {};
 	for (let i = 0; i < hospitals.length; i++) {
 		hospitalConverter[hospitals[i]] = `H${i+1}`;

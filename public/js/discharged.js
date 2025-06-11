@@ -12,15 +12,8 @@ const dischargedTitleFontSize = 10;
 const dischargedLineWidth = 2;
 const axisColor = "#4a4a4a";
 
-const dischargedLineColors = {
-	"BMC":  "#006C67",
-	"HCGH": "#B9314F",
-	"JHH":  "#454E9E",
-	"SH":   "#95B46A",
-	"SMH":  "#B6C2D9",
-	"BCC":  "#9370DB",
-	"default": "blue",
-};
+// Dynamic hospital colors - will be loaded from metadata
+let dischargedLineColors = null;
 
 import {dischargedDescription} from "./figure_text.js";
 export {createDischargedPlot};
@@ -145,7 +138,9 @@ function plotDischarged(svg, xScale, yScale, data, response, locIdx, plotSize, p
 		.y(d => yScale(d.value));
 
 	const locName = response.config.node_names[locIdx];
-	const locColor = (locName in dischargedLineColors) ? dischargedLineColors[locName] : dischargedLineColors["default"];
+	// Use local colors if available, otherwise use global colors
+	const colors = dischargedLineColors || window.hospitalColors || {};
+	const locColor = (locName in colors) ? colors[locName] : "#000000";
 
 	svg.append("path")
 		.datum(data["discharged"][locIdx])

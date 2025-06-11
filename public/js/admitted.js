@@ -12,20 +12,8 @@ const admissionsTitleFontSize = 10;
 const admissionsLineWidth = 2;
 const axisColor = "#4a4a4a";
 
-const admissionsLineColors = {
-	"BMC":  "#006C67",
-	"HCGH": "#B9314F",
-	"JHH":  "#454E9E",
-	"SH":   "#95B46A",
-	"SMH":  "#B6C2D9",
-	"BCC":  "#9370DB",
-	"H1": "#006C67",
-	"H2": "#B9314F",
-	"H3": "#454E9E",
-	"H4": "#95B46A",
-	"H5": "#B6C2D9",
-	"default": "blue",
-};
+// Dynamic hospital colors - will be loaded from metadata
+let admissionsLineColors = null;
 
 import {admissionsDescription} from "./figure_text.js";
 export {createAdmissionsPlot};
@@ -153,7 +141,9 @@ function plotAdmissions(svg, xScale, yScale, data, response, locIdx, plotSize, p
 		.y(d => yScale(d.value));
 
 	const locName = response.config.node_names[locIdx];
-	const locColor = (locName in admissionsLineColors) ? admissionsLineColors[locName] : admissionsLineColors["default"];
+	// Use local colors if available, otherwise use global colors
+	const colors = admissionsLineColors || window.hospitalColors || {};
+	const locColor = (locName in colors) ? colors[locName] : "#000000";
 
 	svg.append("path")
 		.datum(data["admissions"][locIdx])
