@@ -1,4 +1,4 @@
-const dashboardMargin = {left: 40, right: 5, top: 5, bottom: 5};
+const dashboardMargin = {left: 40, right: 5, top: 5, bottom: 15};
 
 const dashboardContainerWidth = 600;
 const dashboardSize = {"width": dashboardContainerWidth, "height": 0.5*dashboardContainerWidth};
@@ -21,22 +21,10 @@ let dashboardLineColors = null;
 import {makeLegend, getHospitalColors} from "./common.js";
 import {dashboardDescription} from "./figure_text.js";
 
-export {createHospitalDashboard, makeHospitalDashboard, loadHospitalColors};
+export {createHospitalDashboard, makeHospitalDashboard};
 
-// Function to preload hospital colors
-async function loadHospitalColors() {
-	if (dashboardLineColors === null) {
-		dashboardLineColors = await getHospitalColors();
-	}
-}
 
 function createHospitalDashboard(response, add_description=true) {
-	// Colors should already be loaded by this point
-	if (dashboardLineColors === null) {
-		console.warn("Hospital colors not loaded, using default colors");
-		dashboardLineColors = {};
-	}
-	
 	const section = document.getElementById("section-results-dashboard");
 	if (add_description) {
 		let description = document.createElement("p");
@@ -62,7 +50,7 @@ function makeHospitalDashboard(response) {
 	const C = response.capacity_levels[0].length;
 
 	const plotSize = {width: (dashboardSize.width - dashboardMargin.left - dashboardMargin.right) / N, height: dashboardSize.height};
-	const plotMargin = {left: 5, right: 5, top: 12, bottom: 25};
+	const plotMargin = {left: 5, right: 5, top: 12, bottom: 40};
 
 	const maxOccupancy = d3.max(response.occupancy, x => d3.max(x));
 	const maxOccupancyNoTfr = d3.max(response.occupancy_notfr, x => d3.max(x));
@@ -123,7 +111,10 @@ function plotOccupancy(svg, xScale, yScale, data, response, locIdx, plotSize, pl
 		)
 		.call(g => g.selectAll(".tick text")
 			.attr("fill", dashboardAxisColor)
-			.attr("dy", 10)
+			.attr("dy", 2)
+			.attr("dx", 10)
+			.attr("transform", "rotate(45)")
+			.attr("text-anchor", "start")
 		);
 
 	const yAxis = g => g
