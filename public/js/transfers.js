@@ -175,7 +175,7 @@ function makeTransfersBreakdownSubplot(svg, response, locIdx, plotSize) {
 
 	const binWidth = 1.02 * (x(dates[1]) - x(dates[0]));
 
-	const tooltip = new TransfersTooltip(svg, x, y, binWidth, response.config.node_names);
+	const tooltip = new TransfersTooltip(svg, x, y, binWidth, response.config.node_names, plotSize);
 
 	svg.append("g")
 		.selectAll("g")
@@ -227,13 +227,14 @@ function makeTransfersBreakdownXAxis(svg, response, plotSize) {
 }
 
 class TransfersTooltip {
-	constructor(svg,x,y,binWidth,node_names) {
+	constructor(svg,x,y,binWidth,node_names, plotSize) {
 		this.x = x;
 		this.y = y;
 		this.binWidth = binWidth;
 		this.node_names = node_names;
 		this.svg = svg;
 		this.highlight = null;
+		this.plotSize = plotSize;
 
 		let tmpSVG = d3.create("svg");
 		let tmpNode = tmpSVG.append("g")
@@ -243,38 +244,76 @@ class TransfersTooltip {
 			.attr("font-size", "8px")
 			.attr("text-anchor", "middle");
 
-		tmpNode.append("rect")
+		this.box = tmpNode.append("rect")
 			.attr("x", -50)
-			.attr("y", -50)
 			.attr("width", 100)
 			.attr("height", 40)
 			.attr("fill", "white")
 			.attr("stroke", "gray")
 			.attr("stroke-width", 1.5);
-		tmpNode.append("rect")
-			.attr("transform", "translate(0, -25) rotate(45)")
+		this.pointer = tmpNode.append("rect")
 			.attr("width", 15)
 			.attr("height", 15)
 			.attr("fill", "white")
 			.attr("stroke", "gray")
 			.attr("stroke-width", 1.0);
-		tmpNode.append("rect")
+		this.cover = tmpNode.append("rect")
 			.attr("x", -50)
-			.attr("y", -50)
 			.attr("width", 100)
 			.attr("height", 40)
 			.attr("fill", "white");
 
-		this._locs = tmpNode.append("text").attr("y", "-37").node();
-		this._date = tmpNode.append("text").attr("y", "-27").node();
-		this._yval = tmpNode.append("text").attr("y", "-17").node();
+		this._locs = tmpNode.append("text").node();
+		this._date = tmpNode.append("text").node();
+		this._yval = tmpNode.append("text").node();
 
 		this.node = tmpNode.node();
 	}
 
 	show(d,e) {
+		this.svg.raise();
 		this.node.removeAttribute("display");
-		this.node.setAttribute("transform", `translate(${this.x(d.date)+(this.binWidth/2)},${this.y(d[1])})`);
+
+		let posX = this.x(d.date) + (this.binWidth / 2);
+		let posY = this.y(d[1]);
+
+		const tooltipWidth = 100;
+		const tooltipHeight = 60; // Approximate height of tooltip box with pointer
+
+		let translateX = posX;
+		let translateY = posY;
+
+		// Horizontal bounds check
+		if (translateX - tooltipWidth / 2 < 0) {
+			translateX = tooltipWidth / 2;
+		}
+		if (translateX + tooltipWidth / 2 > this.plotSize.width) {
+			translateX = this.plotSize.width - tooltipWidth / 2;
+		}
+
+		// Vertical bounds check
+		if (posY < tooltipHeight) {
+			// Not enough space above, show below the bar
+			this.box.attr("y", 10);
+			this.pointer.attr("transform", "translate(0, 25) rotate(45)");
+			this.cover.attr("y", 10);
+			d3.select(this._locs).attr("y", 23);
+			d3.select(this._date).attr("y", 33);
+			d3.select(this._yval).attr("y", 43);
+			translateY = this.y(d[0]);
+		} else {
+			// Show above the bar (default)
+			this.box.attr("y", -50);
+			this.pointer.attr("transform", "translate(0, -25) rotate(45)");
+			this.cover.attr("y", -50);
+			d3.select(this._locs).attr("y", -37);
+			d3.select(this._date).attr("y", -27);
+			d3.select(this._yval).attr("y", -17);
+			translateY = posY;
+		}
+
+
+		this.node.setAttribute("transform", `translate(${translateX},${translateY})`);
 
 		this._locs.textContent = this.node_names[d.fromIdx] + " → " + this.node_names[d.toIdx];
 		this._date.textContent = d3.timeFormat("%Y-%m-%d")(d.date);
