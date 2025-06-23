@@ -1,4 +1,4 @@
-const admissionsMargin = {left: 45, right: 5, top: 5, bottom: 5};
+const admissionsMargin = {left: 45, right: 5, top: 5, bottom: 20};
 
 const admissionsContainerWidth = 600;
 const admissionsSize = {"width": admissionsContainerWidth, "height": 0.4*admissionsContainerWidth};
@@ -9,7 +9,7 @@ const admissionsDefaultFont = "Helvetica";
 const admissionsAxisFontSize = 8;
 const admissionsTitleFontSize = 10;
 
-const admissionsLineWidth = 2;
+const admissionsLineWidth = 1.25;
 const axisColor = "#4a4a4a";
 
 // Dynamic hospital colors - will be loaded from metadata
@@ -43,7 +43,7 @@ function makeAdmissionsPlot(response) {
 	const T = response.config.dates.length;
 
 	const plotSize = {width: (admissionsSize.width - admissionsMargin.left - admissionsMargin.right) / N, height: admissionsSize.height};
-	const plotMargin = {left: 5, right: 5, top: 12, bottom: 25};
+	const plotMargin = {left: 5, right: 5, top: 12, bottom: 40};
 
 	const data = computeAdmissionsData(response);
 
@@ -101,7 +101,10 @@ function plotAdmissions(svg, xScale, yScale, data, response, locIdx, plotSize, p
 		)
 		.call(g => g.selectAll(".tick text")
 			.attr("fill", axisColor)
-			.attr("dy", 10)
+			.attr("dy", 2)
+			.attr("dx", 10)
+			.attr("transform", "rotate(45)")
+			.attr("text-anchor", "start")
 		);
 
 	const yAxis = g => g
