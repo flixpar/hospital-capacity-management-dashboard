@@ -152,9 +152,17 @@ function makeTransfersSankey(response, graph) {
 		.attr("d", d3.sankeyLinkHorizontal())
 		.attr("stroke", d => `url(#${d.uid})`)
 		.attr("stroke-width", d => Math.max(1, d.width))
-		.on("mouseover", (e,d) => tooltip.show(e,d))
+		.on("mouseover", (e,d) => {
+			d3.select(e.currentTarget.parentNode).attr("stroke-opacity", 0.9);
+			tooltip.show(e,d)
+		})
+		.on("mouseout", (e,d) => {
+			d3.select(e.currentTarget.parentNode).attr("stroke-opacity", 0.5);
+			tooltip.hide(e,d);
+		});
 
 	// Enable Tooltip //
+	svg.on("mousemove", e => tooltip.move(e));
 	svg.append(() => tooltip.node);
 
 	return svg.node();
@@ -218,7 +226,6 @@ class TransfersSankeyTooltip {
 	constructor(svg, response) {
 		this.svg = svg;
 		this.response = response;
-		this.highlight = null;
 
 		let tmpSVG = d3.create("svg");
 		let tooltipNode = tmpSVG.append("g")
@@ -262,13 +269,12 @@ class TransfersSankeyTooltip {
 		this.textLine1 = tooltipNode.append("text").attr("y", "24").node();
 		this.textLine2 = tooltipNode.append("text").attr("y", "38").node();
 
-		this.svg.on("mousemove", e => this.move(e));
-
 		this.node = tooltipNode.node();
 	}
 
 	show(e,d) {
 		this.node.removeAttribute("display");
+		this.move(e);
 
 		const transferText = `${d.source.name.substring(0,d.source.name.length-4)} → ${d.target.name.substring(0,d.target.name.length-4)}`;
 		this.textLine1.textContent = transferText;
@@ -276,28 +282,26 @@ class TransfersSankeyTooltip {
 		const transferAmount = (d.value < 1) ? "<1" : d.value.toFixed(0)
 		this.textLine2.textContent = "Transfers: " + transferAmount;
 
-		this.highlight = e.srcElement.cloneNode();
-		this.highlight.setAttribute("stroke", "white");
-		e.srcElement.parentElement.appendChild(this.highlight);
-		this.highlight.addEventListener("mouseout", () => this.hide());
-
 		const transferTextWidth = transferText.length * 12 * 0.6 + 20;
 		if (transferTextWidth > 120) {
 			this.bubble.attr("width", transferTextWidth);
 			this.bubble.attr("x", -transferTextWidth/2);
 			this.bubbleBackground.attr("width", transferTextWidth);
 			this.bubbleBackground.attr("x", -transferTextWidth/2);
+		} else {
+			this.bubble.attr("width", 120);
+			this.bubble.attr("x", -60);
+			this.bubbleBackground.attr("width", 120);
+			this.bubbleBackground.attr("x", -60);
 		}
 	}
 
 	move(e) {
-		const scaleFactor = transfersSankeySize.width / this.svg.node().clientWidth;
-		const x = scaleFactor * e.layerX;
-		const y = scaleFactor * e.layerY;
+		const [x,y] = d3.pointer(e, this.svg.node());
 
 		const positionBottom = (y-45-10 <= 0);
 		if (positionBottom) {
-			this.node.setAttribute("transform", `translate(${x},${y})`);
+			this.node.setAttribute("transform", `translate(${x},${y+15})`);
 			this.topTab.node().removeAttribute("display");
 			this.bottomTab.node().setAttribute("display", "none");
 		} else {
@@ -308,10 +312,6 @@ class TransfersSankeyTooltip {
 	}
 
 	hide(e,d) {
-		if (this.highlight != null) {
-			this.highlight.remove();
-			this.highlight = null;
-		}
 		this.node.setAttribute("display", "none");
 	}
 }
