@@ -20,7 +20,7 @@ const lineWidth = 1.25;
 
 const figureMargins = {left: 5, right: 5, top: 5, bottom: 5};
 const plotMargins   = {left: 0, right: 0, top: 0, bottom: 0, between: 20};
-const plotPadding   = {left: 25, right: 0, top: 16, bottom: 30};
+const plotPadding   = {left: 25, right: 0, top: 16, bottom: 50};
 const plotSize      = {height: 200, width: 600};
 
 
@@ -73,7 +73,10 @@ function plotHospital(response, datatype, locIdx, container, svg) {
 		)
 		.call(g => g.selectAll(".tick text")
 			.attr("fill", axisColor)
-			.attr("dy", 10)
+			.attr("dy", 2)
+			.attr("dx", 10)
+			.attr("transform", "rotate(45)")
+			.attr("text-anchor", "start")
 		);
 
 	const yAxis = g => g
@@ -120,7 +123,7 @@ function plotHospital(response, datatype, locIdx, container, svg) {
 	const titleText = (datatype == "occupancy" ? "COVID Occupancy: " : "COVID Patient Admissions: ") + response.hospitals[locIdx];
 	container.append("text")
 		.attr("x", plotSize.width / 2)
-		.attr("y", 5)
+		.attr("y", 15)
 		.attr("text-anchor", "middle")
 		.style("font-family", font)
 		.style("font-size", fontSizes.title)
