@@ -241,27 +241,31 @@ function setupTableDownloads(rawdata) {
 	});
 	downloadContainer.appendChild(downloadAllButton);
 
-	let downloadTableButton = document.createElement("button");
-	downloadTableButton.className = "button is-info";
-	downloadTableButton.style.marginRight = "10px";
-	downloadTableButton.textContent = "Download Table";
-	downloadTableButton.type = "button";
-	downloadTableButton.addEventListener("click", _ => {
-		console.log("download table");
-		downloadTableAsCSV(rawdata.full_results, "patient_alloc_table.csv");
-	});
-	downloadContainer.appendChild(downloadTableButton);
+	if (rawdata.full_results) {
+		let downloadTableButton = document.createElement("button");
+		downloadTableButton.className = "button is-info";
+		downloadTableButton.style.marginRight = "10px";
+		downloadTableButton.textContent = "Download Table";
+		downloadTableButton.type = "button";
+		downloadTableButton.addEventListener("click", _ => {
+			console.log("download table");
+			downloadTableAsCSV(rawdata.full_results, "patient_alloc_table.csv");
+		});
+		downloadContainer.appendChild(downloadTableButton);
+	}
 
-	let downloadSummaryButton = document.createElement("button");
-	downloadSummaryButton.className = "button is-info";
-	downloadSummaryButton.style.marginRight = "10px";
-	downloadSummaryButton.textContent = "Download Summary Table";
-	downloadSummaryButton.type = "button";
-	downloadSummaryButton.addEventListener("click", _ => {
-		console.log("download table");
-		downloadTableAsCSV(rawdata.summary, "patient_alloc_summary.csv");
-	});
-	downloadContainer.appendChild(downloadSummaryButton);
+	if (rawdata.summary) {
+		let downloadSummaryButton = document.createElement("button");
+		downloadSummaryButton.className = "button is-info";
+		downloadSummaryButton.style.marginRight = "10px";
+		downloadSummaryButton.textContent = "Download Summary Table";
+		downloadSummaryButton.type = "button";
+		downloadSummaryButton.addEventListener("click", _ => {
+			console.log("download table");
+			downloadTableAsCSV(rawdata.summary, "patient_alloc_summary.csv");
+		});
+		downloadContainer.appendChild(downloadSummaryButton);
+	}
 
 	let hr = document.createElement("hr");
 	section.appendChild(hr);

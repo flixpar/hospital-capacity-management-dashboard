@@ -59,10 +59,14 @@ async function handleResponse(response, status, xhr) {
 
 	createAdmissionTargetsTable(response, true);
 
-	// setupTable(response.summary, true, "summary-table", "Summary Statistics");
-	// setupTable(response.full_results, true, "full-table", "Full Results");
-	// setupTableFilter("full-table");
-	// setupTableDownloads(response);
+	if (response.summary) {
+		setupTable(response.summary, true, "summary-table", "Summary Statistics");
+	}
+	if (response.full_results) {
+		setupTable(response.full_results, true, "full-table", "Full Results");
+		setupTableFilter(response, "full-table");
+	}
+	setupTableDownloads(response);
 
 	updateText(response);
 	generateAllFigureDownloadButtons();
