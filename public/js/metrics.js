@@ -225,6 +225,7 @@ function createAdmissionTargetsTableRaw(response, sectionName, includeCurrent=tr
 	tableHeader.appendChild(tableHeaderRow);
 
 	let blank = document.createElement("th");
+	blank.style.borderRight = "1px solid gray";
 	tableHeaderRow.appendChild(blank);
 
 	for (const capacity_level of tableData.capacity_level) {
@@ -236,6 +237,7 @@ function createAdmissionTargetsTableRaw(response, sectionName, includeCurrent=tr
 	if (includeCurrent) {
 		let elem = document.createElement("th");
 		elem.textContent = "Current Average";
+		elem.style.borderLeft = "1px solid gray";
 		tableHeaderRow.appendChild(elem);
 	}
 
@@ -245,15 +247,16 @@ function createAdmissionTargetsTableRaw(response, sectionName, includeCurrent=tr
 
 		let nameEntry = document.createElement("th");
 		nameEntry.textContent = h;
+		nameEntry.style.borderRight = "1px solid gray";
 		row.appendChild(nameEntry);
 
 		const currentLevel = +response.admission_targets.current_admissions[i].toFixed(1);
 
 		for (const v of tableData[h]) {
 			let td = document.createElement("td");
-			td.textContent = (v == -1) ? 0 : +v.toFixed(1);
+			td.textContent = (v == -1) ? 0 : Math.ceil(v);
 			if (includeCurrent) {
-				td.style.color = (v < currentLevel) ? "red" : "green";
+				td.style.backgroundColor = (v < currentLevel) ? "#ff6969" : "#33e277";
 			}
 			row.appendChild(td);
 		}
@@ -262,6 +265,7 @@ function createAdmissionTargetsTableRaw(response, sectionName, includeCurrent=tr
 			let elem = document.createElement("td");
 			elem.textContent = currentLevel;
 			elem.style.fontWeight = "bold";
+			elem.style.borderLeft = "1px solid gray";
 			row.appendChild(elem);
 		}
 	});
