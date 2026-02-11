@@ -40,7 +40,12 @@ function initLLMChat(page) {
 	panel.innerHTML = `
 		<div id="llm-chat-header">
 			<span>AI Assistant</span>
-			<button id="llm-chat-header-close">&times;</button>
+			<div id="llm-chat-header-actions">
+				<button id="llm-chat-new" title="New chat">
+					<ion-icon name="add-circle-outline"></ion-icon>
+				</button>
+				<button id="llm-chat-header-close">&times;</button>
+			</div>
 		</div>
 		<div id="llm-chat-messages"></div>
 		<div id="llm-chat-input-area">
@@ -52,6 +57,7 @@ function initLLMChat(page) {
 
 	// Event listeners
 	panel.querySelector("#llm-chat-header-close").addEventListener("click", toggleChatPanel);
+	panel.querySelector("#llm-chat-new").addEventListener("click", clearChat);
 	panel.querySelector("#llm-chat-send").addEventListener("click", sendChatMessage);
 	const input = panel.querySelector("#llm-chat-input");
 	input.addEventListener("keydown", (e) => {
@@ -65,24 +71,6 @@ function initLLMChat(page) {
 		input.style.height = "auto";
 		input.style.height = Math.min(input.scrollHeight, 100) + "px";
 	});
-
-	// Explain modal (shared)
-	if (!document.getElementById("llm-explain-modal")) {
-		const modal = document.createElement("div");
-		modal.id = "llm-explain-modal";
-		modal.innerHTML = `
-			<div id="llm-explain-modal-content">
-				<button id="llm-explain-modal-close">&times;</button>
-				<div id="llm-explain-modal-title"></div>
-				<div id="llm-explain-modal-body"></div>
-			</div>
-		`;
-		document.body.appendChild(modal);
-		modal.querySelector("#llm-explain-modal-close").addEventListener("click", closeExplainModal);
-		modal.addEventListener("click", (e) => {
-			if (e.target === modal) closeExplainModal();
-		});
-	}
 }
 
 function toggleChatPanel() {
@@ -91,6 +79,12 @@ function toggleChatPanel() {
 	if (panel.classList.contains("is-active")) {
 		document.getElementById("llm-chat-input").focus();
 	}
+}
+
+function clearChat() {
+	chatHistory = [];
+	const messages = document.getElementById("llm-chat-messages");
+	messages.innerHTML = "";
 }
 
 async function sendChatMessage() {
@@ -120,25 +114,33 @@ async function sendChatMessage() {
 			figure_id: visibleSection || "",
 		};
 
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), 180000);
+
 		const resp = await fetch("/api/chat", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(payload),
+			signal: controller.signal,
 		});
 
+		clearTimeout(timeoutId);
 		const data = await resp.json();
 		thinkingEl.remove();
 
 		if (data.error) {
 			appendMessage("assistant", "Sorry, I encountered an error: " + data.error);
 		} else {
-			const responseText = data.response;
-			appendMessage("assistant", responseText);
-			chatHistory.push({ role: "assistant", content: responseText });
+			appendMessage("assistant", data.response, data.reasoning);
+			chatHistory.push({ role: "assistant", content: data.response });
 		}
 	} catch (err) {
 		thinkingEl.remove();
-		appendMessage("assistant", "Sorry, I could not reach the AI service. Please check that the server is running.");
+		if (err.name === "AbortError") {
+			appendMessage("assistant", "The request timed out. The AI service may be slow or unavailable.");
+		} else {
+			appendMessage("assistant", "Sorry, I could not reach the AI service. Please check that the server is running.");
+		}
 		console.error("Chat error:", err);
 	}
 
@@ -146,13 +148,18 @@ async function sendChatMessage() {
 	input.focus();
 }
 
-function appendMessage(role, content) {
+function appendMessage(role, content, reasoning) {
 	const messages = document.getElementById("llm-chat-messages");
 	const div = document.createElement("div");
 	div.className = `llm-chat-message ${role}`;
 
 	if (role === "assistant" && typeof marked !== "undefined") {
-		div.innerHTML = marked.parse(content);
+		let html = "";
+		if (reasoning) {
+			html += `<details class="llm-reasoning"><summary>Reasoning</summary>${marked.parse(reasoning)}</details>`;
+		}
+		html += marked.parse(content);
+		div.innerHTML = html;
 	} else {
 		div.textContent = content;
 	}
@@ -172,50 +179,95 @@ function showThinking() {
 }
 
 // ============================================================
-// "?" Explain Buttons
+// "?" Explain Buttons (Per-Figure)
 // ============================================================
 
 function initLLMButtons(response) {
 	currentResponse = response;
 
-	// Remove any existing explain buttons first
+	// Remove any existing explain buttons and inline explanation panels
 	document.querySelectorAll(".llm-figure-explain-btn").forEach(el => el.remove());
+	document.querySelectorAll(".llm-explain-inline").forEach(el => el.remove());
 
 	for (const sectionId of SECTION_IDS) {
 		const sectionContent = document.getElementById("section-" + sectionId);
 		if (!sectionContent) continue;
 
-		const btn = document.createElement("button");
-		btn.type = "button";
-		btn.className = "llm-figure-explain-btn";
-		btn.innerHTML = `<ion-icon name="help-circle-outline"></ion-icon> Explain this figure`;
-		btn.addEventListener("click", () => explainSection(sectionId));
-		sectionContent.appendChild(btn);
+		// Find all figure elements in this section
+		const figures = sectionContent.querySelectorAll(".figure");
+
+		if (figures.length > 0) {
+			// Add a button after each figure
+			for (const fig of figures) {
+				const figureName = fig.getAttribute("figure-name") || "";
+				const btn = createExplainButton(sectionId, fig, figureName);
+				fig.parentNode.insertBefore(btn, fig.nextSibling);
+			}
+		} else {
+			// Fallback: one button for the section (for sections without .figure elements)
+			const btn = createExplainButton(sectionId, null, "");
+			sectionContent.appendChild(btn);
+		}
 	}
 }
 
-async function explainSection(sectionId) {
-	const modal = document.getElementById("llm-explain-modal");
-	const title = document.getElementById("llm-explain-modal-title");
-	const body = document.getElementById("llm-explain-modal-body");
+function createExplainButton(sectionId, figureElement, figureName) {
+	const btn = document.createElement("button");
+	btn.type = "button";
+	btn.className = "llm-figure-explain-btn";
+	btn.innerHTML = `<ion-icon name="help-circle-outline"></ion-icon> Explain this figure`;
+	btn.addEventListener("click", () => explainFigure(btn, sectionId, figureElement, figureName));
+	return btn;
+}
 
-	// Get section title from header
+async function explainFigure(button, sectionId, figureElement, figureName) {
+	// Check if there's already an inline explanation for this button
+	let panel = button.nextElementSibling;
+	if (panel && panel.classList.contains("llm-explain-inline")) {
+		// Toggle visibility
+		panel.classList.toggle("is-hidden");
+		return;
+	}
+
+	// Create inline explanation panel
+	panel = document.createElement("div");
+	panel.className = "llm-explain-inline";
+
+	// Get section title
 	const sectionContent = document.getElementById("section-" + sectionId);
 	const sectionHeader = sectionContent ? sectionContent.previousElementSibling : null;
 	const headerText = sectionHeader ? sectionHeader.querySelector(".results-section-header-text") : null;
 	const sectionTitle = headerText ? headerText.textContent : sectionId;
 
-	title.textContent = sectionTitle;
-	body.innerHTML = `<div class="llm-explain-spinner">Analyzing figure...</div>`;
-	modal.classList.add("is-active");
+	panel.innerHTML = `
+		<div class="llm-explain-inline-header">
+			<span class="llm-explain-inline-title">${sectionTitle}</span>
+			<button class="llm-explain-inline-close">&times;</button>
+		</div>
+		<div class="llm-explain-inline-body">
+			<div class="llm-explain-spinner">Analyzing figure...</div>
+		</div>
+	`;
+
+	button.parentNode.insertBefore(panel, button.nextSibling);
+
+	panel.querySelector(".llm-explain-inline-close").addEventListener("click", () => {
+		panel.classList.add("is-hidden");
+	});
+
+	const body = panel.querySelector(".llm-explain-inline-body");
 
 	try {
-		// Capture image from the section
+		// Capture image from the specific figure element or section
 		let imageData = null;
 		try {
-			imageData = await captureSectionImage(sectionId);
+			if (figureElement) {
+				imageData = await captureFigureImage(figureElement);
+			} else {
+				imageData = await captureSectionImage(sectionId);
+			}
 		} catch (imgErr) {
-			console.warn("Could not capture section image:", imgErr);
+			console.warn("Could not capture figure image:", imgErr);
 		}
 
 		const context = buildContext();
@@ -228,29 +280,39 @@ async function explainSection(sectionId) {
 			image_data: imageData,
 		};
 
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), 180000);
+
 		const resp = await fetch("/api/chat", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(payload),
+			signal: controller.signal,
 		});
 
+		clearTimeout(timeoutId);
 		const data = await resp.json();
 
 		if (data.error) {
 			body.textContent = "Error: " + data.error;
 		} else if (typeof marked !== "undefined") {
-			body.innerHTML = marked.parse(data.response);
+			let html = "";
+			if (data.reasoning) {
+				html += `<details class="llm-reasoning"><summary>Reasoning</summary>${marked.parse(data.reasoning)}</details>`;
+			}
+			html += marked.parse(data.response);
+			body.innerHTML = html;
 		} else {
 			body.textContent = data.response;
 		}
 	} catch (err) {
-		body.textContent = "Could not reach the AI service. Please check that the server is running.";
+		if (err.name === "AbortError") {
+			body.textContent = "The request timed out. The AI service may be slow or unavailable.";
+		} else {
+			body.textContent = "Could not reach the AI service. Please check that the server is running.";
+		}
 		console.error("Explain error:", err);
 	}
-}
-
-function closeExplainModal() {
-	document.getElementById("llm-explain-modal").classList.remove("is-active");
 }
 
 // ============================================================
@@ -363,6 +425,19 @@ function findMostVisibleSection() {
 // Image Capture
 // ============================================================
 
+async function captureFigureImage(element) {
+	if (!element) return null;
+
+	// The element itself should be an SVG or contain one
+	let svg = element;
+	if (svg.tagName.toLowerCase() !== "svg") {
+		svg = element.querySelector("svg");
+	}
+	if (!svg) return null;
+
+	return await renderSVGToPNG(svg);
+}
+
 async function captureSectionImage(sectionId) {
 	const section = document.getElementById("section-" + sectionId);
 	if (!section) return null;
@@ -372,7 +447,11 @@ async function captureSectionImage(sectionId) {
 	if (!svg) svg = section.querySelector("svg");
 	if (!svg) return null;
 
-	// Serialize SVG with embedded images (adapted from figuredl.js pattern)
+	return await renderSVGToPNG(svg);
+}
+
+async function renderSVGToPNG(svg) {
+	// Serialize SVG with embedded images
 	const svgDataUrl = await getSVGDataForCapture(svg);
 
 	// Convert to PNG via canvas at 2x scale

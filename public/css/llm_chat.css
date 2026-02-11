@@ -60,6 +60,29 @@
 	flex-shrink: 0;
 }
 
+#llm-chat-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+#llm-chat-new {
+	background: none;
+	border: none;
+	color: white;
+	cursor: pointer;
+	font-size: 20px;
+	padding: 0;
+	line-height: 1;
+	opacity: 0.8;
+	display: flex;
+	align-items: center;
+}
+
+#llm-chat-new:hover {
+	opacity: 1;
+}
+
 #llm-chat-header-close {
 	background: none;
 	border: none;
@@ -261,112 +284,148 @@
 	font-size: 16px;
 }
 
-/* Explain modal overlay */
-#llm-explain-modal {
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	background: rgba(0, 0, 0, 0.5);
-	z-index: 1001;
+/* Inline explanation panel (replaces modal) */
+.llm-explain-inline {
+	border: 1px solid #d5d5d5;
+	border-radius: 8px;
+	background: #fafafa;
+	margin: 12px 0;
+	overflow: hidden;
+}
+
+.llm-explain-inline.is-hidden {
 	display: none;
-	align-items: center;
-	justify-content: center;
 }
 
-#llm-explain-modal.is-active {
+.llm-explain-inline-header {
 	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 16px;
+	background-color: #f0f0f0;
+	border-bottom: 1px solid #d5d5d5;
 }
 
-#llm-explain-modal-content {
-	background: white;
-	border-radius: 12px;
-	padding: 24px;
-	max-width: 640px;
-	width: 90%;
-	max-height: 80vh;
-	overflow-y: auto;
-	position: relative;
-	box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-}
-
-#llm-explain-modal-close {
-	position: absolute;
-	top: 12px;
-	right: 16px;
-	background: none;
-	border: none;
-	font-size: 24px;
-	cursor: pointer;
-	color: #666;
-	line-height: 1;
-}
-
-#llm-explain-modal-close:hover {
+.llm-explain-inline-title {
+	font-size: 0.95rem;
+	font-weight: 600;
 	color: #333;
 }
 
-#llm-explain-modal-title {
-	font-size: 1.1rem;
-	font-weight: 600;
-	margin-bottom: 16px;
-	padding-right: 30px;
+.llm-explain-inline-close {
+	background: none;
+	border: none;
+	font-size: 20px;
+	cursor: pointer;
+	color: #666;
+	line-height: 1;
+	padding: 0;
 }
 
-#llm-explain-modal-body {
+.llm-explain-inline-close:hover {
+	color: #333;
+}
+
+.llm-explain-inline-body {
+	padding: 16px;
 	font-size: 0.9rem;
 	line-height: 1.6;
 	color: #333;
 }
 
-#llm-explain-modal-body p {
+.llm-explain-inline-body p {
 	margin: 0 0 10px 0;
 }
 
-#llm-explain-modal-body p:last-child {
+.llm-explain-inline-body p:last-child {
 	margin-bottom: 0;
 }
 
-#llm-explain-modal-body ul,
-#llm-explain-modal-body ol {
+.llm-explain-inline-body ul,
+.llm-explain-inline-body ol {
 	margin: 4px 0 10px 20px;
 	padding: 0;
 }
 
-#llm-explain-modal-body li {
+.llm-explain-inline-body li {
 	margin-bottom: 4px;
 }
 
-#llm-explain-modal-body strong {
+.llm-explain-inline-body strong {
 	font-weight: 600;
 }
 
-#llm-explain-modal-body code {
-	background-color: #f0f0f0;
+.llm-explain-inline-body code {
+	background-color: #e8e8e8;
 	padding: 1px 4px;
 	border-radius: 3px;
 	font-size: 0.85em;
 }
 
-#llm-explain-modal-body table {
+.llm-explain-inline-body table {
 	border-collapse: collapse;
 	margin: 8px 0;
 	font-size: 0.85em;
 	width: 100%;
 }
 
-#llm-explain-modal-body th,
-#llm-explain-modal-body td {
+.llm-explain-inline-body th,
+.llm-explain-inline-body td {
 	border: 1px solid #ccc;
 	padding: 4px 8px;
 	text-align: left;
 }
 
-#llm-explain-modal-body th {
-	background-color: #f0f0f0;
+.llm-explain-inline-body th {
+	background-color: #e8e8e8;
 }
 
+.llm-explain-inline-body h1,
+.llm-explain-inline-body h2,
+.llm-explain-inline-body h3,
+.llm-explain-inline-body h4 {
+	font-weight: 600;
+	margin: 8px 0 4px 0;
+}
+
+.llm-explain-inline-body h1 { font-size: 1.1em; }
+.llm-explain-inline-body h2 { font-size: 1.05em; }
+.llm-explain-inline-body h3 { font-size: 1.0em; }
+
+/* Reasoning toggle (collapsed by default) */
+.llm-reasoning {
+	margin-bottom: 12px;
+	border: 1px solid #ddd;
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.llm-reasoning summary {
+	padding: 6px 12px;
+	background-color: #e8e8e8;
+	cursor: pointer;
+	font-size: 0.8rem;
+	font-weight: 500;
+	color: #666;
+	user-select: none;
+}
+
+.llm-reasoning summary:hover {
+	background-color: #ddd;
+	color: #444;
+}
+
+.llm-reasoning > :not(summary) {
+	padding: 0 12px;
+}
+
+.llm-reasoning p {
+	font-size: 0.85rem;
+	color: #555;
+	line-height: 1.5;
+}
+
+/* Loading spinner */
 .llm-explain-spinner {
 	display: flex;
 	align-items: center;

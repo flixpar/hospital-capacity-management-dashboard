@@ -31,24 +31,29 @@ Key terminology:
 - **Load balancing**: Distributing patients across hospitals so no single facility is overwhelmed
 - **Transfer budget**: Maximum number of patient transfers allowed per day (per hospital or system-wide)
 - **Capacity utilization**: Percentage of total beds that can practically be used (accounts for staffing, equipment, etc.)
+
+Additional guidance:
+- Use full markdown formatting in the response, which will be rendered using marked.js on the dashboard frontend
+- Assume you are speaking directly to a hospital administrator
+- Don't ask follow-up questions
 """
 
 const FIGURE_PROMPTS = Dict(
     "results-dashboard" => """
-The user is viewing the **Occupancy Timeline** (Hospital Dashboard) section. This shows a multi-panel chart with one panel per hospital displaying daily patient occupancy over the selected time period.
+The user is viewing the **Occupancy Timeline** section. This shows a multi-panel chart with one panel per hospital displaying daily patient occupancy over the selected time period.
 
 How to read this chart:
 - Each panel represents one hospital in the system
 - The x-axis is the date, the y-axis is the number of patients (occupancy)
-- A blue line/area shows occupancy WITHOUT optimized transfers (baseline/historical)
-- A green line/area shows occupancy WITH optimized transfers (the recommended scenario)
-- A red horizontal line shows the hospital's reported bed capacity
-- When the blue line exceeds the red capacity line, that hospital needs surge capacity or transfers
+- A dark line (per-panel) shows occupancy WITH optimized transfers (the recommended scenario)
+- A faint line (per-panel) shows occupancy WITHOUT optimized transfers (baseline/historical)
+- A set of horizontal lines show capacity thresholds (e.g., baseline capacity in yellow, surge capacity in red)
+- When the values exceed the red capacity line, that hospital needs surge capacity or transfers
 
 Key patterns to look for:
-- Hospitals where blue significantly exceeds red (most stressed facilities)
-- How much the green line differs from blue (effectiveness of transfers)
-- Whether green stays below red (transfers are sufficient) or still exceeds it (surge capacity needed)
+- Hospitals that exceed higher capacity levels
+- How much the dark lines differ from the faint lines (effectiveness of transfers)
+- Whether the dark lines stay below the red lines (transfers are sufficient) or still exceed them (surge capacity needed)
 - Timing of peak occupancy across hospitals (simultaneous vs. staggered peaks)
 """,
 
@@ -265,7 +270,7 @@ function handle_chat_request(messages, context, figure_id, image_data)
 
     # Build input messages for the responses API
     api_messages = Vector{Dict{String,Any}}()
-    
+
     for (i, msg) in enumerate(messages)
         role = get(msg, "role", "user")
         content = get(msg, "content", "")
@@ -295,7 +300,7 @@ function handle_chat_request(messages, context, figure_id, image_data)
     response = OpenAI.openai_request(
         "responses", provider;
         method = "POST",
-        http_kwargs = NamedTuple(),
+        http_kwargs = (; readtimeout = 180),
         input = api_messages,
         model = LLM_MODEL,
         instructions = system_text,
