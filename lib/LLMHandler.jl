@@ -7,7 +7,7 @@ export handle_chat_request
 
 # Configuration from environment variables
 const LLM_BASE_URL = get(ENV, "LLM_BASE_URL", "http://localhost:8111/v1")
-const LLM_API_KEY = get(ENV, "LLM_API_KEY", "secret")
+const LLM_API_KEY = get(ENV, "LLM_API_KEY", "")
 const LLM_MODEL = get(ENV, "LLM_MODEL", "Qwen3-VL-8B-Instruct")
 
 const SYSTEM_PROMPT = """
@@ -314,7 +314,7 @@ function format_context(context)
     if haskey(context, "total_patients")
         total = context["total_patients"]
         push!(tfr_lines, "- Total patients in system: $total")
-        if haskey(context, "total_transfers")
+        if haskey(context, "total_transfers") && total > 0
             pct = round(context["total_transfers"] / total * 100; digits=1)
             push!(tfr_lines, "- Percent of patients transferred: $pct%")
         end
@@ -480,9 +480,6 @@ function handle_chat_request(messages, context, figure_id, image_data)
         base_url = LLM_BASE_URL,
     )
 
-    @show system_text
-    @show api_messages
-
     # Call the LLM using the responses API
     response = OpenAI.openai_request(
         "responses", provider;
@@ -494,8 +491,6 @@ function handle_chat_request(messages, context, figure_id, image_data)
         reasoning = Dict("effort" => "low", "summary" => "detailed"),
         store = true,
     )
-
-    @show response
 
     # Extract reasoning summaries and answer from the response
     output = response.response["output"]

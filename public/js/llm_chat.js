@@ -115,7 +115,7 @@ async function sendChatMessage() {
 		};
 
 		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), 180000);
+		const timeoutId = setTimeout(() => controller.abort(), 185000);
 
 		const resp = await fetch("/api/chat", {
 			method: "POST",
@@ -281,7 +281,7 @@ async function explainFigure(button, sectionId, figureElement, figureName) {
 		};
 
 		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), 180000);
+		const timeoutId = setTimeout(() => controller.abort(), 185000);
 
 		const resp = await fetch("/api/chat", {
 			method: "POST",
@@ -430,7 +430,7 @@ function buildContext() {
 				median_occupancy_with_transfers: medianW,
 				median_occupancy_without_transfers: medianN,
 			};
-			if (baseCap !== null) {
+			if (baseCap > 0) {
 				stats.baseline_capacity = baseCap;
 				stats.peak_load_with_transfers = +(peakW / baseCap).toFixed(2);
 				stats.peak_load_without_transfers = +(peakN / baseCap).toFixed(2);

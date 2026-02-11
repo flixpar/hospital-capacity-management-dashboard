@@ -1,5 +1,5 @@
 using DotEnv
-DotEnv.load!()
+try DotEnv.load!() catch; end
 
 using Genie
 using Genie.Router
@@ -137,7 +137,7 @@ route("/api/chat", method=POST) do
 		return json(result)
 	catch e
 		@error "LLM chat error" exception=(e, catch_backtrace())
-		return json(Dict("error" => "Failed to get LLM response: $(sprint(showerror, e))"))
+		return json(Dict("error" => "Failed to get LLM response. Please try again."))
 	end
 end
 
