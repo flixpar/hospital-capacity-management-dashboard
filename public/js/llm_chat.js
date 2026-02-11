@@ -322,7 +322,7 @@ async function explainFigure(button, sectionId, figureElement, figureName) {
 function buildContext() {
 	const ctx = {};
 
-	// Read form parameters
+	// ── Form parameters ──
 	const startDate = document.getElementById("form-start-date");
 	const endDate = document.getElementById("form-end-date");
 	if (startDate) ctx.start_date = startDate.value;
@@ -340,54 +340,223 @@ function buildContext() {
 	const utilization = document.getElementById("form-utilization");
 	if (utilization) ctx.capacity_utilization = utilization.value;
 
-	// Extract key metrics from stored response
-	if (currentResponse) {
-		if (currentResponse.config && currentResponse.config.node_names) {
-			ctx.hospitals = currentResponse.config.node_names;
+	const losEl = document.getElementById("form-los");
+	if (losEl) {
+		if (losEl.tagName === "SELECT") {
+			ctx.length_of_stay = losEl.options[losEl.selectedIndex].text;
+		} else {
+			ctx.length_of_stay = losEl.value;
 		}
+	}
 
-		// Bed capacity
-		if (currentResponse.config && currentResponse.config.capacity) {
-			const beds = {};
-			const names = currentResponse.config.node_names || [];
-			const caps = currentResponse.config.capacity;
-			if (Array.isArray(caps)) {
-				names.forEach((h, i) => {
-					if (i < caps.length) beds[h] = caps[i];
-				});
+	// Transfer budgets
+	const tfrTotal = document.getElementById("form-transferbudget-total");
+	if (tfrTotal) ctx.transfer_budget_total = tfrTotal.value;
+
+	// Per-hospital transfer budgets
+	const tfrBudgets = {};
+	document.querySelectorAll("[id^='form-transferbudget-']").forEach(el => {
+		const key = el.id.replace("form-transferbudget-", "").toUpperCase();
+		if (key !== "TOTAL") tfrBudgets[key] = el.value;
+	});
+	if (Object.keys(tfrBudgets).length > 0) ctx.transfer_budgets_per_hospital = tfrBudgets;
+
+	// ── Extract data from stored response ──
+	if (!currentResponse) return ctx;
+
+	const r = currentResponse;
+	const names = (r.config && r.config.node_names) || [];
+	const N = names.length;
+	ctx.hospitals = names;
+
+	const dates = (r.config && r.config.dates) || [];
+	const T = dates.length;
+	ctx.num_days = T;
+
+	// Capacity level names
+	if (r.config && r.config.capacity_names) {
+		ctx.capacity_level_names = r.config.capacity_names;
+	}
+
+	// Region
+	if (r.config && r.config.region && r.config.region.region_fullname) {
+		ctx.region = r.config.region.region_fullname;
+	}
+
+	// Page type
+	ctx.page = pageName;
+
+	// ── Per-hospital capacity (multi-level) ──
+	// r.capacity[i] is an array of capacity levels for hospital i
+	// r.capacity_levels is the same thing (set in patients.js)
+	const cap = r.capacity_levels || r.capacity;
+	if (cap && Array.isArray(cap) && N > 0) {
+		const hospitalCapacity = {};
+		for (let i = 0; i < N; i++) {
+			if (i < cap.length && Array.isArray(cap[i])) {
+				const capNames = (r.config && r.config.capacity_names) || [];
+				const levels = {};
+				for (let c = 0; c < cap[i].length; c++) {
+					const levelName = capNames[c] || `Level ${c}`;
+					levels[levelName] = Math.round(cap[i][c]);
+				}
+				hospitalCapacity[names[i]] = levels;
 			}
-			if (Object.keys(beds).length > 0) ctx.beds = beds;
+		}
+		if (Object.keys(hospitalCapacity).length > 0) ctx.hospital_capacity = hospitalCapacity;
+	}
+
+	// ── Occupancy statistics (with and without transfers) ──
+	if (r.occupancy && r.occupancy_notfr && N > 0 && T > 0) {
+		const hospStats = {};
+		let systemOccWithTfr = new Array(T).fill(0);
+		let systemOccNoTfr = new Array(T).fill(0);
+
+		for (let i = 0; i < N; i++) {
+			const occW = r.occupancy[i] || [];
+			const occN = r.occupancy_notfr[i] || [];
+
+			const peakW = Math.round(d3.max(occW) || 0);
+			const peakN = Math.round(d3.max(occN) || 0);
+			const medianW = Math.round(d3.median(occW) || 0);
+			const medianN = Math.round(d3.median(occN) || 0);
+
+			// Baseline capacity (level 0)
+			const baseCap = (cap && cap[i] && cap[i][0]) ? Math.round(cap[i][0]) : null;
+
+			const stats = {
+				peak_occupancy_with_transfers: peakW,
+				peak_occupancy_without_transfers: peakN,
+				median_occupancy_with_transfers: medianW,
+				median_occupancy_without_transfers: medianN,
+			};
+			if (baseCap !== null) {
+				stats.baseline_capacity = baseCap;
+				stats.peak_load_with_transfers = +(peakW / baseCap).toFixed(2);
+				stats.peak_load_without_transfers = +(peakN / baseCap).toFixed(2);
+				stats.surge_needed_with_transfers = Math.max(0, peakW - baseCap);
+				stats.surge_needed_without_transfers = Math.max(0, peakN - baseCap);
+			}
+
+			hospStats[names[i]] = stats;
+
+			for (let t = 0; t < T; t++) {
+				systemOccWithTfr[t] += (occW[t] || 0);
+				systemOccNoTfr[t] += (occN[t] || 0);
+			}
+		}
+		ctx.hospital_stats = hospStats;
+
+		// System-level load stats
+		const totalBaseCap = (cap && Array.isArray(cap))
+			? d3.sum(cap, c => (Array.isArray(c) && c[0]) ? c[0] : 0)
+			: 0;
+
+		ctx.system_stats = {
+			peak_occupancy_with_transfers: Math.round(d3.max(systemOccWithTfr)),
+			peak_occupancy_without_transfers: Math.round(d3.max(systemOccNoTfr)),
+			median_occupancy_with_transfers: Math.round(d3.median(systemOccWithTfr)),
+			median_occupancy_without_transfers: Math.round(d3.median(systemOccNoTfr)),
+			total_baseline_capacity: Math.round(totalBaseCap),
+		};
+		if (totalBaseCap > 0) {
+			ctx.system_stats.peak_load_with_transfers = +(d3.max(systemOccWithTfr) / totalBaseCap).toFixed(2);
+			ctx.system_stats.peak_load_without_transfers = +(d3.max(systemOccNoTfr) / totalBaseCap).toFixed(2);
+			ctx.system_stats.system_surge_needed_with_transfers = Math.max(0, Math.round(d3.max(systemOccWithTfr) - totalBaseCap));
+			ctx.system_stats.system_surge_needed_without_transfers = Math.max(0, Math.round(d3.max(systemOccNoTfr) - totalBaseCap));
 		}
 
-		// Peak occupancy from summary
-		if (currentResponse.summary) {
-			const peaks = {};
-			const summaryData = currentResponse.summary;
-			if (summaryData.columns && summaryData.data) {
-				const peakCol = summaryData.columns.indexOf("Peak Occupancy");
-				const nameCol = summaryData.columns.indexOf("Hospital");
-				if (peakCol >= 0 && nameCol >= 0) {
-					for (const row of summaryData.data) {
-						peaks[row[nameCol]] = row[peakCol];
+		// Find peak dates
+		const peakIdxW = systemOccWithTfr.indexOf(d3.max(systemOccWithTfr));
+		const peakIdxN = systemOccNoTfr.indexOf(d3.max(systemOccNoTfr));
+		if (dates[peakIdxW]) ctx.system_stats.peak_date_with_transfers = dates[peakIdxW];
+		if (dates[peakIdxN]) ctx.system_stats.peak_date_without_transfers = dates[peakIdxN];
+	}
+
+	// ── Total transfers ──
+	if (r.transfers && Array.isArray(r.transfers)) {
+		const totalTfr = d3.sum(r.transfers, x => d3.sum(x, z => d3.sum(z)));
+		ctx.total_transfers = Math.round(totalTfr);
+
+		// Per-hospital sent/received
+		if (N > 0) {
+			const sent = {};
+			const received = {};
+			// transfers is [T][dest][source]
+			for (let i = 0; i < N; i++) {
+				let totalSent = 0;
+				let totalRecv = 0;
+				for (let t = 0; t < r.transfers.length; t++) {
+					for (let j = 0; j < N; j++) {
+						if (r.transfers[t] && r.transfers[t][j]) {
+							totalSent += (r.transfers[t][j][i] || 0);  // source=i
+						}
+						if (r.transfers[t] && r.transfers[t][i]) {
+							totalRecv += (r.transfers[t][i][j] || 0);  // dest=i
+						}
+					}
+				}
+				sent[names[i]] = Math.round(totalSent);
+				received[names[i]] = Math.round(totalRecv);
+			}
+			ctx.transfers_sent = sent;
+			ctx.transfers_received = received;
+
+			// Largest transfer routes
+			const routes = {};
+			for (let src = 0; src < N; src++) {
+				for (let dst = 0; dst < N; dst++) {
+					if (src === dst) continue;
+					let routeTotal = 0;
+					for (let t = 0; t < r.transfers.length; t++) {
+						if (r.transfers[t] && r.transfers[t][dst]) {
+							routeTotal += (r.transfers[t][dst][src] || 0);
+						}
+					}
+					if (routeTotal > 0.5) {
+						routes[`${names[src]} → ${names[dst]}`] = Math.round(routeTotal);
 					}
 				}
 			}
-			if (Object.keys(peaks).length > 0) ctx.peak_occupancy = peaks;
+			ctx.transfer_routes = routes;
 		}
+	} else if (r.total_transfers != null) {
+		ctx.total_transfers = r.total_transfers;
+	}
 
-		// Total transfers
-		if (currentResponse.total_transfers != null) {
-			ctx.total_transfers = currentResponse.total_transfers;
-		} else if (currentResponse.transfers) {
-			// Try to compute from transfers data
-			let total = 0;
-			if (Array.isArray(currentResponse.transfers)) {
-				for (const t of currentResponse.transfers) {
-					total += (t.value || t.count || 0);
-				}
-			}
-			if (total > 0) ctx.total_transfers = Math.round(total);
+	// ── Total patients ──
+	if (r.total_patients != null) {
+		ctx.total_patients = r.total_patients;
+	}
+
+	// ── Admissions stats ──
+	if (r.admissions && N > 0) {
+		const admStats = {};
+		for (let i = 0; i < N; i++) {
+			const adm = r.admissions[i] || [];
+			admStats[names[i]] = {
+				peak_daily_admissions: Math.round(d3.max(adm) || 0),
+				mean_daily_admissions: +(d3.mean(adm) || 0).toFixed(1),
+				total_admissions: Math.round(d3.sum(adm)),
+			};
 		}
+		ctx.admission_stats = admStats;
+	}
+
+	// ── Surge capacity detail (max required capacity level per hospital) ──
+	if (cap && r.occupancy && N > 0) {
+		const surgeDetail = {};
+		const capNames = (r.config && r.config.capacity_names) || [];
+		const C = (cap[0] && cap[0].length) || 0;
+		for (let i = 0; i < N; i++) {
+			const peakOcc = d3.max(r.occupancy[i] || []) || 0;
+			let reqLevel = C - 1;
+			for (let c = 0; c < C; c++) {
+				if (cap[i][c] >= peakOcc) { reqLevel = c; break; }
+			}
+			surgeDetail[names[i]] = capNames[reqLevel] || `Level ${reqLevel}`;
+		}
+		ctx.required_capacity_levels = surgeDetail;
 	}
 
 	return ctx;
