@@ -231,9 +231,14 @@ function format_context(context)
 end
 
 """
-    handle_chat_request(messages, context, figure_id, image_data) -> String
+    handle_chat_request(messages, context, figure_id, image_data) -> Dict
 
-Process a chat request by assembling the prompt layers and calling the LLM.
+Process a chat request by assembling the prompt layers and calling the LLM
+via the responses API.
+
+Returns a Dict with keys:
+- `"reasoning"`: Concatenated reasoning summary text (may be empty)
+- `"response"`: The assistant's answer text
 
 - `messages`: Array of message dicts with "role" and "content" keys
 - `context`: Dict of current dashboard parameters and key results (can be empty)
@@ -241,7 +246,7 @@ Process a chat request by assembling the prompt layers and calling the LLM.
 - `image_data`: Optional base64 PNG data URL for figure image (can be nothing/empty)
 """
 function handle_chat_request(messages, context, figure_id, image_data)
-    # Build system message
+    # Build system instructions
     system_text = SYSTEM_PROMPT
 
     # Add dynamic context if provided
@@ -258,10 +263,9 @@ function handle_chat_request(messages, context, figure_id, image_data)
         end
     end
 
-    # Build messages array for the API
+    # Build input messages for the responses API
     api_messages = Vector{Dict{String,Any}}()
-    push!(api_messages, Dict{String,Any}("role" => "system", "content" => system_text))
-
+    
     for (i, msg) in enumerate(messages)
         role = get(msg, "role", "user")
         content = get(msg, "content", "")
@@ -272,8 +276,8 @@ function handle_chat_request(messages, context, figure_id, image_data)
             push!(api_messages, Dict{String,Any}(
                 "role" => "user",
                 "content" => [
-                    Dict{String,Any}("type" => "text", "text" => string(content)),
-                    Dict{String,Any}("type" => "image_url", "image_url" => Dict{String,Any}("url" => img_url)),
+                    Dict{String,Any}("type" => "input_text", "text" => string(content)),
+                    Dict{String,Any}("type" => "input_image", "image_url" => img_url),
                 ]
             ))
         else
@@ -287,15 +291,43 @@ function handle_chat_request(messages, context, figure_id, image_data)
         base_url = LLM_BASE_URL,
     )
 
-    # Call the LLM
-    response = create_chat(
-        provider,
-        LLM_MODEL,
-        api_messages;
+    # Call the LLM using the responses API
+    response = OpenAI.openai_request(
+        "responses", provider;
+        method = "POST",
+        http_kwargs = NamedTuple(),
+        input = api_messages,
+        model = LLM_MODEL,
+        instructions = system_text,
+        reasoning = Dict("effort" => "low", "summary" => "detailed"),
+        store = true,
     )
 
-    # Extract and return the assistant's response text
-    return response.response["choices"][1]["message"]["content"]
+    # Extract reasoning summaries and answer from the response
+    output = response.response["output"]
+
+    reasoning_parts = String[]
+    answer_parts = String[]
+    for item in output
+        if item["type"] == "reasoning"
+            for summary in item["summary"]
+                if summary["type"] == "summary_text"
+                    push!(reasoning_parts, summary["text"])
+                end
+            end
+        elseif item["type"] == "message"
+            for content_item in item["content"]
+                if content_item["type"] == "output_text"
+                    push!(answer_parts, content_item["text"])
+                end
+            end
+        end
+    end
+
+    return Dict(
+        "reasoning" => join(reasoning_parts, "\n\n"),
+        "response" => join(answer_parts, ""),
+    )
 end
 
 end # module

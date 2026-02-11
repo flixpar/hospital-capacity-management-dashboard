@@ -133,8 +133,8 @@ route("/api/chat", method=POST) do
 	image_data = get(input, "image_data", nothing)
 
 	try
-		response_text = handle_chat_request(messages, context, figure_id, image_data)
-		return json(Dict("response" => response_text))
+		result = handle_chat_request(messages, context, figure_id, image_data)
+		return json(result)
 	catch e
 		@error "LLM chat error" exception=(e, catch_backtrace())
 		return json(Dict("error" => "Failed to get LLM response: $(sprint(showerror, e))"))
