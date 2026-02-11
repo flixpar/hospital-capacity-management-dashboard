@@ -34,3 +34,5 @@ outputs/
 notes/
 
 julia-1.11.5/
+
+.env

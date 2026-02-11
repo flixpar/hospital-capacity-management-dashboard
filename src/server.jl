@@ -1,3 +1,6 @@
+using DotEnv
+DotEnv.load!()
+
 using Genie
 using Genie.Router
 using Genie.Requests
