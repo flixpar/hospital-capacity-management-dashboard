@@ -9,6 +9,7 @@ push!(LOAD_PATH, normpath(@__DIR__, "..", "src"));
 push!(LOAD_PATH, normpath(@__DIR__, "..", "lib"));
 
 using EndpointHandler
+using LLMHandler
 
 
 route("/") do
@@ -118,6 +119,23 @@ route("/api/data", method=GET) do
 	scenario = get(paramsdata, :scenario, "none")
 	response = get_all_data(patienttype, scenario)
 	return json(response)
+end
+
+route("/api/chat", method=POST) do
+	input = jsonpayload()
+
+	messages = get(input, "messages", [])
+	context = get(input, "context", Dict())
+	figure_id = get(input, "figure_id", nothing)
+	image_data = get(input, "image_data", nothing)
+
+	try
+		response_text = handle_chat_request(messages, context, figure_id, image_data)
+		return json(Dict("response" => response_text))
+	catch e
+		@error "LLM chat error" exception=(e, catch_backtrace())
+		return json(Dict("error" => "Failed to get LLM response: $(sprint(showerror, e))"))
+	end
 end
 
 route("/api/metadata", method=GET) do

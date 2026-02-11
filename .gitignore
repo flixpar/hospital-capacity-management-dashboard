@@ -1,6 +1,7 @@
 build/*
 cache/*
 config/secrets.jl
+config/llm_config.jl
 docs/build
 log/*
 logs/*
@@ -30,3 +31,6 @@ rawdata/
 analysis/
 tmp/
 outputs/
+notes/
+
+julia-1.11.5/
