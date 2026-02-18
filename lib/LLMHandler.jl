@@ -226,6 +226,9 @@ function format_context(context)
     if haskey(context, "patient_type")
         push!(params, "- Patient type: $(context["patient_type"])")
     end
+    if haskey(context, "bed_type")
+        push!(params, "- Bed/capacity type: $(context["bed_type"])")
+    end
     if haskey(context, "objective")
         push!(params, "- Optimization objective: $(context["objective"])")
     end
@@ -254,6 +257,15 @@ function format_context(context)
     if haskey(context, "page")
         page_desc = context["page"] == "patients" ? "Patient Allocation (simplified model)" : "Decision Optimization (full model)"
         push!(params, "- Dashboard page: $page_desc")
+    end
+    if haskey(context, "metrics_capacity_level")
+        push!(params, "- Metrics table capacity level selection: $(context["metrics_capacity_level"])")
+    end
+    if haskey(context, "system_load_capacity_level")
+        push!(params, "- System load figure capacity level selection: $(context["system_load_capacity_level"])")
+    end
+    if haskey(context, "hospital_load_capacity_level")
+        push!(params, "- Hospital loads figure capacity level selection: $(context["hospital_load_capacity_level"])")
     end
     if !isempty(params)
         push!(sections, "## Model Parameters\n" * join(params, "\n"))
@@ -298,6 +310,12 @@ function format_context(context)
             _push_stat!(lines, ss, "median_occupancy_with_transfers", "Median system occupancy (with transfers)")
             _push_pct!(lines, ss, "peak_load_without_transfers", "Peak system load (without transfers)")
             _push_pct!(lines, ss, "peak_load_with_transfers", "Peak system load (with transfers)")
+            _push_stat!(lines, ss, "required_surge_capacity_patient_days_without_transfers", "Required surge capacity (without transfers, patient-days)")
+            _push_stat!(lines, ss, "required_surge_capacity_patient_days_with_transfers", "Required surge capacity (with transfers, patient-days)")
+            _push_stat!(lines, ss, "max_required_surge_capacity_without_transfers", "Max required surge capacity (without transfers, beds)")
+            _push_stat!(lines, ss, "max_required_surge_capacity_with_transfers", "Max required surge capacity (with transfers, beds)")
+            _push_stat!(lines, ss, "peak_simultaneous_system_overflow_without_transfers", "Peak simultaneous system overflow (without transfers, beds)")
+            _push_stat!(lines, ss, "peak_simultaneous_system_overflow_with_transfers", "Peak simultaneous system overflow (with transfers, beds)")
             _push_stat!(lines, ss, "system_surge_needed_without_transfers", "System surge beds needed (without transfers)")
             _push_stat!(lines, ss, "system_surge_needed_with_transfers", "System surge beds needed (with transfers)")
             _push_stat!(lines, ss, "peak_date_without_transfers", "Peak date (without transfers)")
@@ -333,12 +351,45 @@ function format_context(context)
             push!(tfr_lines, "- Patients received per hospital:\n" * join(strs, "\n"))
         end
     end
+    if haskey(context, "net_transfers")
+        net = context["net_transfers"]
+        if net isa AbstractDict
+            strs = ["  - $k: $v" for (k, v) in net]
+            push!(tfr_lines, "- Net transfers per hospital (sent - received):\n" * join(strs, "\n"))
+        end
+    end
     if haskey(context, "transfer_routes")
         routes = context["transfer_routes"]
         if routes isa AbstractDict && !isempty(routes)
             sorted = sort(collect(routes); by=last, rev=true)
             strs = ["  - $k: $v patients" for (k, v) in sorted]
             push!(tfr_lines, "- Transfer routes (largest first):\n" * join(strs, "\n"))
+        end
+    end
+    if haskey(context, "transfer_timing")
+        tt = context["transfer_timing"]
+        if tt isa AbstractDict
+            _push_stat!(tfr_lines, tt, "modeled_days_with_transfer_data", "Modeled days with transfer data")
+            _push_stat!(tfr_lines, tt, "active_transfer_days", "Days with non-zero transfers")
+            _push_stat!(tfr_lines, tt, "mean_daily_transfers", "Mean daily transfers")
+            _push_stat!(tfr_lines, tt, "peak_daily_transfers", "Peak daily transfers")
+            _push_stat!(tfr_lines, tt, "peak_transfer_date", "Peak transfer date")
+            if haskey(tt, "top_transfer_days")
+                top_days = tt["top_transfer_days"]
+                if top_days isa AbstractVector && !isempty(top_days)
+                    rows = String[]
+                    for row in top_days
+                        if row isa AbstractDict
+                            day = get(row, "date", "unknown date")
+                            n = get(row, "transfers", "unknown")
+                            push!(rows, "  - $day: $n")
+                        end
+                    end
+                    if !isempty(rows)
+                        push!(tfr_lines, "- Top transfer-volume days:\n" * join(rows, "\n"))
+                    end
+                end
+            end
         end
     end
     if !isempty(tfr_lines)
@@ -406,7 +457,10 @@ end
 # Helper to push a stat line if key exists
 function _push_stat!(lines, d, key, label)
     if haskey(d, key)
-        push!(lines, "- $label: $(d[key])")
+        val = d[key]
+        if !isnothing(val) && !ismissing(val)
+            push!(lines, "- $label: $(val)")
+        end
     end
 end
 
@@ -414,8 +468,10 @@ end
 function _push_pct!(lines, d, key, label)
     if haskey(d, key)
         val = d[key]
-        pct = isa(val, Number) ? "$(round(val * 100; digits=0))%" : "$val"
-        push!(lines, "- $label: $pct")
+        if !isnothing(val) && !ismissing(val)
+            pct = isa(val, Number) ? "$(round(val * 100; digits=0))%" : "$val"
+            push!(lines, "- $label: $pct")
+        end
     end
 end
 

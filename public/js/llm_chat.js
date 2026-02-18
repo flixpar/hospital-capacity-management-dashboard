@@ -319,6 +319,59 @@ async function explainFigure(button, sectionId, figureElement, figureName) {
 // Context Assembly
 // ============================================================
 
+function maybeNumber(value) {
+	const n = Number(value);
+	return Number.isFinite(n) ? n : null;
+}
+
+function selectedText(selectEl) {
+	if (!selectEl || selectEl.tagName !== "SELECT") return null;
+	const idx = selectEl.selectedIndex;
+	return idx >= 0 ? selectEl.options[idx].text : null;
+}
+
+function inferTransferAccessor(transfers, N, TExpected) {
+	if (!Array.isArray(transfers) || transfers.length === 0) return null;
+
+	const d0 = transfers.length;
+	const d1 = Array.isArray(transfers[0]) ? transfers[0].length : 0;
+	const d2 = (d1 > 0 && Array.isArray(transfers[0][0])) ? transfers[0][0].length : 0;
+
+	// Most common in this dashboard: [source][destination][day]
+	if (d0 === N && d1 === N) {
+		return {
+			timeCount: d2,
+			getTransfer: (src, dst, t) => maybeNumber(transfers[src]?.[dst]?.[t]) || 0,
+		};
+	}
+
+	// Alternate layout: [day][destination][source]
+	if (d1 === N && d2 === N) {
+		return {
+			timeCount: d0,
+			getTransfer: (src, dst, t) => maybeNumber(transfers[t]?.[dst]?.[src]) || 0,
+		};
+	}
+
+	// Fallback for uncommon layout: [source][day][destination]
+	if (d0 === N && d2 === N) {
+		return {
+			timeCount: d1,
+			getTransfer: (src, dst, t) => maybeNumber(transfers[src]?.[t]?.[dst]) || 0,
+		};
+	}
+
+	// Last-ditch shape hint using expected number of days
+	if (TExpected > 0 && d0 === TExpected && d1 === N && d2 === N) {
+		return {
+			timeCount: d0,
+			getTransfer: (src, dst, t) => maybeNumber(transfers[t]?.[dst]?.[src]) || 0,
+		};
+	}
+
+	return null;
+}
+
 function buildContext() {
 	const ctx = {};
 
@@ -328,14 +381,30 @@ function buildContext() {
 	if (startDate) ctx.start_date = startDate.value;
 	if (endDate) ctx.end_date = endDate.value;
 
-	const patientType = document.getElementById("form-bed-type") || document.getElementById("form-patient-type");
-	if (patientType) ctx.patient_type = patientType.options[patientType.selectedIndex].text;
+	const patientTypeSelect = document.getElementById("form-patient-type") || document.getElementById("form-bed-type");
+	if (patientTypeSelect) {
+		const txt = selectedText(patientTypeSelect);
+		ctx.patient_type = txt || patientTypeSelect.value;
+	}
+
+	// On recommendations page, this is a separate "Capacity Type"/bed-type selector.
+	const bedTypeSelect = document.getElementById("form-bed-type");
+	if (bedTypeSelect && bedTypeSelect !== patientTypeSelect) {
+		const txt = selectedText(bedTypeSelect);
+		ctx.bed_type = txt || bedTypeSelect.value;
+	}
 
 	const objective = document.getElementById("form-objective");
-	if (objective) ctx.objective = objective.options[objective.selectedIndex].text;
+	if (objective) {
+		const txt = selectedText(objective);
+		ctx.objective = txt || objective.value;
+	}
 
 	const scenario = document.getElementById("form-scenario");
-	if (scenario) ctx.scenario = scenario.options[scenario.selectedIndex].text;
+	if (scenario) {
+		const txt = selectedText(scenario);
+		ctx.scenario = txt || scenario.value;
+	}
 
 	const utilization = document.getElementById("form-utilization");
 	if (utilization) ctx.capacity_utilization = utilization.value;
@@ -343,19 +412,37 @@ function buildContext() {
 	const losEl = document.getElementById("form-los");
 	if (losEl) {
 		if (losEl.tagName === "SELECT") {
-			ctx.length_of_stay = losEl.options[losEl.selectedIndex].text;
+			const txt = selectedText(losEl);
+			ctx.length_of_stay = txt || losEl.value;
 		} else {
 			ctx.length_of_stay = losEl.value;
 		}
+	}
+
+	// Capture active dashboard view options so figure-specific answers stay aligned.
+	const metricsCapacitySel = document.getElementById("metrics-capacitylevel-select");
+	if (metricsCapacitySel) {
+		const txt = selectedText(metricsCapacitySel);
+		ctx.metrics_capacity_level = txt || metricsCapacitySel.value;
+	}
+	const overallCapacitySel = document.getElementById("overallloadplot-capacitylevel");
+	if (overallCapacitySel) {
+		const txt = selectedText(overallCapacitySel);
+		ctx.system_load_capacity_level = txt || overallCapacitySel.value;
+	}
+	const hospitalLoadCapacitySel = document.getElementById("loadplots-capacitylevel");
+	if (hospitalLoadCapacitySel) {
+		const txt = selectedText(hospitalLoadCapacitySel);
+		ctx.hospital_load_capacity_level = txt || hospitalLoadCapacitySel.value;
 	}
 
 	// Transfer budgets
 	const tfrTotal = document.getElementById("form-transferbudget-total");
 	if (tfrTotal) ctx.transfer_budget_total = tfrTotal.value;
 
-	// Per-hospital transfer budgets
+	// Per-hospital transfer budgets (inputs only; ignore container divs)
 	const tfrBudgets = {};
-	document.querySelectorAll("[id^='form-transferbudget-']").forEach(el => {
+	document.querySelectorAll("input[id^='form-transferbudget-'], select[id^='form-transferbudget-']").forEach(el => {
 		const key = el.id.replace("form-transferbudget-", "").toUpperCase();
 		if (key !== "TOTAL") tfrBudgets[key] = el.value;
 	});
@@ -411,6 +498,10 @@ function buildContext() {
 		const hospStats = {};
 		let systemOccWithTfr = new Array(T).fill(0);
 		let systemOccNoTfr = new Array(T).fill(0);
+		let totalOverflowPatientDaysWith = 0;
+		let totalOverflowPatientDaysWithout = 0;
+		let sumMaxOverflowWith = 0;
+		let sumMaxOverflowWithout = 0;
 
 		for (let i = 0; i < N; i++) {
 			const occW = r.occupancy[i] || [];
@@ -422,7 +513,8 @@ function buildContext() {
 			const medianN = Math.round(d3.median(occN) || 0);
 
 			// Baseline capacity (level 0)
-			const baseCap = (cap && cap[i] && cap[i][0]) ? Math.round(cap[i][0]) : null;
+			const baseCapRaw = cap && cap[i] ? maybeNumber(cap[i][0]) : null;
+			const baseCap = baseCapRaw != null ? Math.round(baseCapRaw) : null;
 
 			const stats = {
 				peak_occupancy_with_transfers: peakW,
@@ -430,12 +522,35 @@ function buildContext() {
 				median_occupancy_with_transfers: medianW,
 				median_occupancy_without_transfers: medianN,
 			};
-			if (baseCap > 0) {
+
+			let hospMaxOverflowWith = 0;
+			let hospMaxOverflowWithout = 0;
+			let hospOverflowPatientDaysWith = 0;
+			let hospOverflowPatientDaysWithout = 0;
+
+			if (baseCap != null && baseCap > 0) {
 				stats.baseline_capacity = baseCap;
 				stats.peak_load_with_transfers = +(peakW / baseCap).toFixed(2);
 				stats.peak_load_without_transfers = +(peakN / baseCap).toFixed(2);
 				stats.surge_needed_with_transfers = Math.max(0, peakW - baseCap);
 				stats.surge_needed_without_transfers = Math.max(0, peakN - baseCap);
+
+				for (let t = 0; t < T; t++) {
+					const overflowW = Math.max(0, (occW[t] || 0) - baseCap);
+					const overflowN = Math.max(0, (occN[t] || 0) - baseCap);
+					hospOverflowPatientDaysWith += overflowW;
+					hospOverflowPatientDaysWithout += overflowN;
+					if (overflowW > hospMaxOverflowWith) hospMaxOverflowWith = overflowW;
+					if (overflowN > hospMaxOverflowWithout) hospMaxOverflowWithout = overflowN;
+				}
+
+				stats.required_surge_capacity_patient_days_with_transfers = Math.round(hospOverflowPatientDaysWith);
+				stats.required_surge_capacity_patient_days_without_transfers = Math.round(hospOverflowPatientDaysWithout);
+
+				totalOverflowPatientDaysWith += hospOverflowPatientDaysWith;
+				totalOverflowPatientDaysWithout += hospOverflowPatientDaysWithout;
+				sumMaxOverflowWith += hospMaxOverflowWith;
+				sumMaxOverflowWithout += hospMaxOverflowWithout;
 			}
 
 			hospStats[names[i]] = stats;
@@ -449,7 +564,7 @@ function buildContext() {
 
 		// System-level load stats
 		const totalBaseCap = (cap && Array.isArray(cap))
-			? d3.sum(cap, c => (Array.isArray(c) && c[0]) ? c[0] : 0)
+			? d3.sum(cap, c => (Array.isArray(c) && maybeNumber(c[0]) != null) ? c[0] : 0)
 			: 0;
 
 		ctx.system_stats = {
@@ -458,12 +573,27 @@ function buildContext() {
 			median_occupancy_with_transfers: Math.round(d3.median(systemOccWithTfr)),
 			median_occupancy_without_transfers: Math.round(d3.median(systemOccNoTfr)),
 			total_baseline_capacity: Math.round(totalBaseCap),
+			required_surge_capacity_patient_days_with_transfers: Math.round(totalOverflowPatientDaysWith),
+			required_surge_capacity_patient_days_without_transfers: Math.round(totalOverflowPatientDaysWithout),
+			max_required_surge_capacity_with_transfers: Math.round(sumMaxOverflowWith),
+			max_required_surge_capacity_without_transfers: Math.round(sumMaxOverflowWithout),
 		};
 		if (totalBaseCap > 0) {
-			ctx.system_stats.peak_load_with_transfers = +(d3.max(systemOccWithTfr) / totalBaseCap).toFixed(2);
-			ctx.system_stats.peak_load_without_transfers = +(d3.max(systemOccNoTfr) / totalBaseCap).toFixed(2);
-			ctx.system_stats.system_surge_needed_with_transfers = Math.max(0, Math.round(d3.max(systemOccWithTfr) - totalBaseCap));
-			ctx.system_stats.system_surge_needed_without_transfers = Math.max(0, Math.round(d3.max(systemOccNoTfr) - totalBaseCap));
+			const peakSystemWith = d3.max(systemOccWithTfr);
+			const peakSystemWithout = d3.max(systemOccNoTfr);
+			const peakSimOverflowWith = Math.max(0, Math.round(peakSystemWith - totalBaseCap));
+			const peakSimOverflowWithout = Math.max(0, Math.round(peakSystemWithout - totalBaseCap));
+
+			ctx.system_stats.peak_load_with_transfers = +(peakSystemWith / totalBaseCap).toFixed(2);
+			ctx.system_stats.peak_load_without_transfers = +(peakSystemWithout / totalBaseCap).toFixed(2);
+
+			// Kept for backward compatibility with existing prompt formatter.
+			ctx.system_stats.system_surge_needed_with_transfers = peakSimOverflowWith;
+			ctx.system_stats.system_surge_needed_without_transfers = peakSimOverflowWithout;
+
+			// Explicit key for system-wide simultaneous overflow (differs from summary-table max overflow definition).
+			ctx.system_stats.peak_simultaneous_system_overflow_with_transfers = peakSimOverflowWith;
+			ctx.system_stats.peak_simultaneous_system_overflow_without_transfers = peakSimOverflowWithout;
 		}
 
 		// Find peak dates
@@ -475,50 +605,80 @@ function buildContext() {
 
 	// ── Total transfers ──
 	if (r.transfers && Array.isArray(r.transfers)) {
-		const totalTfr = d3.sum(r.transfers, x => d3.sum(x, z => d3.sum(z)));
-		ctx.total_transfers = Math.round(totalTfr);
+		const transferInfo = inferTransferAccessor(r.transfers, N, T);
+		if (transferInfo && N > 0) {
+			const { timeCount, getTransfer } = transferInfo;
+			const sentTotals = new Array(N).fill(0);
+			const receivedTotals = new Array(N).fill(0);
+			const routeTotals = Array.from({ length: N }, () => new Array(N).fill(0));
+			const dailyTotals = new Array(timeCount).fill(0);
+			let totalTfr = 0;
 
-		// Per-hospital sent/received
-		if (N > 0) {
-			const sent = {};
-			const received = {};
-			// transfers is [T][dest][source]
-			for (let i = 0; i < N; i++) {
-				let totalSent = 0;
-				let totalRecv = 0;
-				for (let t = 0; t < r.transfers.length; t++) {
-					for (let j = 0; j < N; j++) {
-						if (r.transfers[t] && r.transfers[t][j]) {
-							totalSent += (r.transfers[t][j][i] || 0);  // source=i
-						}
-						if (r.transfers[t] && r.transfers[t][i]) {
-							totalRecv += (r.transfers[t][i][j] || 0);  // dest=i
-						}
+			for (let t = 0; t < timeCount; t++) {
+				let dayTotal = 0;
+				for (let src = 0; src < N; src++) {
+					for (let dst = 0; dst < N; dst++) {
+						const v = Math.max(0, getTransfer(src, dst, t));
+						if (v <= 0) continue;
+						totalTfr += v;
+						dayTotal += v;
+						sentTotals[src] += v;
+						receivedTotals[dst] += v;
+						if (src !== dst) routeTotals[src][dst] += v;
 					}
 				}
-				sent[names[i]] = Math.round(totalSent);
-				received[names[i]] = Math.round(totalRecv);
+				dailyTotals[t] = dayTotal;
+			}
+
+			ctx.total_transfers = Math.round(totalTfr);
+
+			const sent = {};
+			const received = {};
+			const net = {};
+			for (let i = 0; i < N; i++) {
+				sent[names[i]] = Math.round(sentTotals[i]);
+				received[names[i]] = Math.round(receivedTotals[i]);
+				net[names[i]] = Math.round(sentTotals[i] - receivedTotals[i]);
 			}
 			ctx.transfers_sent = sent;
 			ctx.transfers_received = received;
+			ctx.net_transfers = net;
 
 			// Largest transfer routes
 			const routes = {};
 			for (let src = 0; src < N; src++) {
 				for (let dst = 0; dst < N; dst++) {
 					if (src === dst) continue;
-					let routeTotal = 0;
-					for (let t = 0; t < r.transfers.length; t++) {
-						if (r.transfers[t] && r.transfers[t][dst]) {
-							routeTotal += (r.transfers[t][dst][src] || 0);
-						}
-					}
+					const routeTotal = routeTotals[src][dst];
 					if (routeTotal > 0.5) {
 						routes[`${names[src]} → ${names[dst]}`] = Math.round(routeTotal);
 					}
 				}
 			}
 			ctx.transfer_routes = routes;
+
+			const peakDailyTransfers = d3.max(dailyTotals) || 0;
+			const peakDayIdx = dailyTotals.indexOf(peakDailyTransfers);
+			const topDays = dailyTotals
+				.map((v, idx) => ({ idx, value: v }))
+				.filter(x => x.value > 0.5)
+				.sort((a, b) => b.value - a.value)
+				.slice(0, 3)
+				.map(x => ({
+					date: dates[x.idx] || `Day ${x.idx + 1}`,
+					transfers: Math.round(x.value),
+				}));
+			ctx.transfer_timing = {
+				modeled_days_with_transfer_data: timeCount,
+				active_transfer_days: dailyTotals.filter(v => v > 0.5).length,
+				mean_daily_transfers: +(d3.mean(dailyTotals) || 0).toFixed(1),
+				peak_daily_transfers: Math.round(peakDailyTransfers),
+				peak_transfer_date: dates[peakDayIdx] || null,
+				top_transfer_days: topDays,
+			};
+		} else {
+			const totalTfr = d3.sum(r.transfers, x => d3.sum(x, z => d3.sum(z)));
+			ctx.total_transfers = Math.round(totalTfr);
 		}
 	} else if (r.total_transfers != null) {
 		ctx.total_transfers = r.total_transfers;
