@@ -14,9 +14,12 @@ import {createOccupancyPlot} from "./occupancyplot.js";
 import {createStatsSummary, createSurgeCapacityMetrics, createAdmissionTargetsTable} from "./metrics.js";
 import {setupTable, setupTableFilter, setupTableDownloads} from "./tables.js";
 import {generateAllFigureDownloadButtons} from "./figuredl.js";
+import {initLLMChat, initLLMButtons} from "./llm_chat.js";
 
 let container = document.getElementById("result-area");
 let recentResponse = null;
+
+initLLMChat("patients");
 
 
 async function handleResponse(response, status, xhr) {
@@ -62,6 +65,7 @@ async function handleResponse(response, status, xhr) {
 
 	updateText(response);
 	generateAllFigureDownloadButtons();
+	initLLMButtons(response);
 
 	console.log("Done.");
 }

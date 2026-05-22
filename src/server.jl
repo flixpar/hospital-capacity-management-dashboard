@@ -1,3 +1,6 @@
+using DotEnv
+try DotEnv.load!() catch; end
+
 using Genie
 using Genie.Router
 using Genie.Requests
@@ -9,6 +12,8 @@ push!(LOAD_PATH, normpath(@__DIR__, "..", "src"));
 push!(LOAD_PATH, normpath(@__DIR__, "..", "lib"));
 
 using EndpointHandler
+using LLMHandler
+using RateLimiter
 
 
 route("/") do
@@ -118,6 +123,40 @@ route("/api/data", method=GET) do
 	scenario = get(paramsdata, :scenario, "none")
 	response = get_all_data(patienttype, scenario)
 	return json(response)
+end
+
+route("/api/chat", method=POST) do
+	input = jsonpayload()
+
+	messages = get(input, "messages", [])
+	context = get(input, "context", Dict())
+	figure_id = get(input, "figure_id", nothing)
+	image_data = get(input, "image_data", nothing)
+
+	# Enforce the request rate limit and daily token budget before calling the LLM.
+	check = RateLimiter.check_request()
+	if !check.allowed
+		return json(Dict("error" => check.message), status = check.status)
+	end
+
+	try
+		result = handle_chat_request(messages, context, figure_id, image_data)
+		RateLimiter.record_usage(get(result, "total_tokens", 0))
+		return json(result)
+	catch e
+		@error "LLM chat error" exception=(e, catch_backtrace())
+		return json(Dict("error" => "Failed to get LLM response. Please try again."), status = 500)
+	end
+end
+
+route("/api/llm_usage", method=GET) do
+	status = RateLimiter.usage_status()
+	return json(Dict(
+		"day" => status.day,
+		"tokens" => status.tokens,
+		"budget" => status.budget,
+		"remaining" => status.remaining,
+	))
 end
 
 route("/api/metadata", method=GET) do

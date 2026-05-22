@@ -22,17 +22,29 @@ export const overflowmapDescription = `
 The daily required surge capacity with optimal patient transfers (right figure) is compared with the historical data (left figure) for every day during the selected time window. The green color indicates an area is within capacity and the red color shows the level of additional capacity required. The darker the red, the more capacity is needed. The goal is to keep the entire region in green, if possible, or light red. The arrows show the optimal patient transfers, with widths corresponding to the number of patients transferred.
 `;
 
-export const dashboardDescription = ``;
+export const dashboardDescription = `
+This dashboard shows a multi-panel occupancy timeline with one panel per hospital. Each panel displays the daily patient count over time, comparing baseline occupancy (without transfers, shown in blue) against optimized occupancy (with recommended transfers, shown in green). The red line marks each hospital's bed capacity. Hospitals where the blue line exceeds the red line are under the most strain and are candidates for transferring patients out.
+`;
 
-export const transfersDescription = ``;
+export const transfersDescription = `
+This figure shows a detailed breakdown of the recommended patient transfers between hospitals over time. Each bar or line segment represents transfers on a given day between a specific pair of hospitals. The height indicates the number of patients transferred. This helps administrators plan logistics and staffing for incoming and outgoing patient movements.
+`;
 
-export const admissionsDescription = ``;
+export const admissionsDescription = `
+This figure shows the daily patient admissions at each hospital over the selected time window. Admission rates drive future occupancy levels based on the average length of stay. Spikes in admissions at a hospital often precede periods of high occupancy and may trigger the need for transfers or surge capacity activation.
+`;
 
-export const dischargedDescription = ``;
+export const dischargedDescription = `
+This figure shows the daily patient discharges from each hospital over the selected time window. Discharge rates, combined with admissions, determine the net change in occupancy each day. Higher discharge rates free up beds and can reduce the need for patient transfers or surge capacity.
+`;
 
-export const metricsDescription = ``;
+export const metricsDescription = `
+This section presents key summary statistics from the optimization results, including total transfers recommended, peak occupancy levels at each hospital, required surge capacity, and overall capacity utilization. These metrics quantify the impact of the optimization and help administrators assess whether the recommended plan is operationally feasible.
+`;
 
-export const capacityTimelineDescription = ``;
+export const capacityTimelineDescription = `
+This figure shows the recommended capacity levels for each hospital over the selected time period. It illustrates when and where additional beds should be activated (surge capacity) and when they can be deactivated. The stepped or graded lines indicate discrete capacity levels that the hospital should maintain on each day to accommodate the projected patient load.
+`;
 
 function jhhsCaseDescription(start_date, end_date) {
 	return `Hospital System from ${start_date} to ${end_date}.`;
