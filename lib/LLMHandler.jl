@@ -484,6 +484,7 @@ via the responses API.
 Returns a Dict with keys:
 - `"reasoning"`: Concatenated reasoning summary text (may be empty)
 - `"response"`: The assistant's answer text
+- `"total_tokens"`: Total tokens consumed by the call (0 if the API reported none)
 
 - `messages`: Array of message dicts with "role" and "content" keys
 - `context`: Dict of current dashboard parameters and key results (can be empty)
@@ -569,9 +570,32 @@ function handle_chat_request(messages, context, figure_id, image_data)
         end
     end
 
+    # Extract token usage so the caller can track it against a budget.
+    # The responses API reports usage under response["usage"]; it may be absent
+    # on some providers or error paths.
+    total_tokens = 0
+    usage = get(response.response, "usage", nothing)
+    if usage isa AbstractDict
+        tt = get(usage, "total_tokens", nothing)
+        if tt isa Number
+            total_tokens = Int(tt)
+        else
+            it = get(usage, "input_tokens", 0)
+            ot = get(usage, "output_tokens", 0)
+            total_tokens = Int((it isa Number ? it : 0) + (ot isa Number ? ot : 0))
+        end
+    end
+    if total_tokens <= 0
+        # No usable usage data: this call cannot be counted against the daily token
+        # budget, so the budget guard is silently ineffective for it. Warn loudly so
+        # a misconfigured or non-conforming LLM provider is noticed.
+        @warn "LLM response reported no token usage; this call will not count against the daily token budget" usage
+    end
+
     return Dict(
         "reasoning" => join(reasoning_parts, "\n\n"),
         "response" => join(answer_parts, ""),
+        "total_tokens" => total_tokens,
     )
 end
 
